@@ -4,6 +4,7 @@ import "./globals.css";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import ToastContainer from "@/components/ToastContainer";
+import WhatsAppButton from "@/components/WhatsAppButton";
 import { AuthProvider } from "@/context/AuthContext";
 import { CartProvider } from "@/context/CartContext";
 import { FavoritesProvider } from "@/context/FavoritesContext";
@@ -42,6 +43,11 @@ export default function RootLayout({
               </main>
               <Footer/>
               <ToastContainer />
+              <WhatsAppButton 
+                phoneNumber="905551234567"
+                message="Merhaba! TrendyShop müşteri hizmetlerine ulaşmak istiyorum. Yardımcı olabilir misiniz?"
+                position="bottom-right"
+              />
             </FavoritesProvider>
           </CartProvider>
         </AuthProvider>

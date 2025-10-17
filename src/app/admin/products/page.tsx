@@ -1,7 +1,6 @@
 "use client";
 
-// import Link from "next/link";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import { productApi, categoryApi } from "@/services/api";
 import MediaUpload from "@/components/MediaUpload";
 import MediaDisplay from "@/components/MediaDisplay";
@@ -22,11 +21,14 @@ export default function AdminProducts() {
   const [editingProduct, setEditingProduct] = useState<any>(null);
   const [actionLoading, setActionLoading] = useState<{ [key: string]: boolean }>({});
   const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'inactive'>('all');
+  const [searchTerm, setSearchTerm] = useState('');
+  const [categoryFilter, setCategoryFilter] = useState('all');
   const [newProduct, setNewProduct] = useState({
     name: "",
     description: "",
     price: 0,
     category_id: 0,
+    categories: [] as number[],
     stock_quantity: 0,
     is_active: true
   });
@@ -36,28 +38,36 @@ export default function AdminProducts() {
     const fetchData = async () => {
       try {
         setLoading(true);
+        setError(null);
+        
         console.log('Fetching products and categories...');
         
-        // Test Supabase connection first
-        console.log('Testing Supabase connection...');
-        const { supabase } = await import('@/lib/supabaseClient');
-        const { data: testData, error: testError } = await supabase.from('products').select('count').limit(1);
-        console.log('Supabase test result:', { testData, testError });
+        // Add timeout to prevent infinite loading
+        const timeoutPromise = new Promise((_, reject) => 
+          setTimeout(() => reject(new Error('Request timeout')), 10000)
+        );
         
-        const [productsResponse, categoriesResponse] = await Promise.all([
+        const dataPromise = Promise.all([
           productApi.getAll(),
           categoryApi.getAll()
         ]);
         
+        const [productsResponse, categoriesResponse] = await Promise.race([
+          dataPromise,
+          timeoutPromise
+        ]) as any;
+        
         console.log('Products response:', productsResponse);
         console.log('Categories response:', categoriesResponse);
         
-        setProducts(productsResponse.data);
-        setCategories(categoriesResponse.data);
+        setProducts(productsResponse.data || []);
+        setCategories(categoriesResponse.data || []);
         setError(null);
       } catch (err) {
-        setError('Failed to fetch data');
         console.error('Error fetching data:', err);
+        setError(err instanceof Error ? err.message : 'Failed to fetch data');
+        setProducts([]);
+        setCategories([]);
       } finally {
         setLoading(false);
       }
@@ -66,23 +76,17 @@ export default function AdminProducts() {
     fetchData();
   }, []);
 
-  const toggleProductStatus = async (id: number) => {
-    console.log('Starting toggle for product ID:', id);
+  const toggleProductStatus = useCallback(async (id: number) => {
     setActionLoading(prev => ({ ...prev, [`status-${id}`]: true }));
     
     try {
       const product = products.find(p => p.id === id);
       if (!product) {
-        console.error('Product not found:', id);
         return;
       }
       
       const newStatus = !product.is_active;
-      console.log('Current status:', product.is_active, 'New status:', newStatus);
-      
-      console.log('Sending API request...');
       const response = await productApi.update(id, { ...product, is_active: newStatus });
-      console.log('API response:', response);
       
       // Update local state - use response.data if available, otherwise use newStatus
       const updatedStatus = response.data ? response.data.is_active : newStatus;
@@ -102,12 +106,11 @@ export default function AdminProducts() {
         `Failed to update product status: ${err instanceof Error ? err.message : 'Unknown error'}`
       );
     } finally {
-      console.log('Clearing loading state for product ID:', id);
       setActionLoading(prev => ({ ...prev, [`status-${id}`]: false }));
     }
-  };
+  }, [products]);
 
-  const deleteProduct = async (id: number) => {
+  const deleteProduct = useCallback(async (id: number) => {
     if (confirm("Are you sure you want to delete this product?")) {
       setActionLoading(prev => ({ ...prev, [`delete-${id}`]: true }));
       
@@ -132,15 +135,15 @@ export default function AdminProducts() {
         setActionLoading(prev => ({ ...prev, [`delete-${id}`]: false }));
       }
     }
-  };
+  }, [products]);
 
   const handleAddProduct = async () => {
     try {
-      // Validate that category_id is selected
-      if (newProduct.category_id === 0) {
+      // Validate that at least one category is selected
+      if (newProduct.categories.length === 0) {
         (window as any).toast?.warning(
           'Validation Error',
-          'Please select a category'
+          'Please select at least one category'
         );
         return;
       }
@@ -165,14 +168,15 @@ export default function AdminProducts() {
       const response = await productApi.create(newProduct);
       setProducts([...products, response.data]);
       setShowAddForm(false);
-      setNewProduct({
-        name: "",
-        description: "",
-        price: 0,
-        category_id: 0,
-        stock_quantity: 0,
-        is_active: true
-      });
+        setNewProduct({
+          name: "",
+          description: "",
+          price: 0,
+          category_id: 0,
+          categories: [],
+          stock_quantity: 0,
+          is_active: true
+        });
       
       // Show success toast
       (window as any).toast?.success(
@@ -188,15 +192,19 @@ export default function AdminProducts() {
     }
   };
 
-  const handleMediaUpload = (media: any) => {
-    console.log('Media uploaded:', media);
+  const handleMediaUpload = useCallback((media: any) => {
     // Media will be automatically saved to database by MediaUpload component
-  };
+  }, []);
 
-  const openEditModal = (product: any) => {
-    setEditingProduct(product);
+  const openEditModal = useCallback((product: any) => {
+    // Transform product categories to array format
+    const productWithCategories = {
+      ...product,
+      categories: product.categories ? product.categories.map((cat: any) => cat.id || cat) : []
+    };
+    setEditingProduct(productWithCategories);
     setShowEditForm(true);
-  };
+  }, []);
 
   const handleEditProduct = async () => {
     try {
@@ -219,10 +227,10 @@ export default function AdminProducts() {
         return;
       }
 
-      if (editingProduct.category_id === 0) {
+      if (!editingProduct.categories || editingProduct.categories.length === 0) {
         (window as any).toast?.warning(
           'Validation Error',
-          'Please select a category'
+          'Please select at least one category'
         );
         return;
       }
@@ -257,28 +265,61 @@ export default function AdminProducts() {
     setEditingProduct(null);
   };
 
-  // Filter products based on status
-  const getFilteredProducts = () => {
-    if (statusFilter === 'all') return products;
-    if (statusFilter === 'active') return products.filter(p => p.is_active);
-    if (statusFilter === 'inactive') return products.filter(p => !p.is_active);
-    return products;
-  };
+  // Filter products based on status, category, and search - memoized for performance
+  const filteredProducts = useMemo(() => {
+    let filtered = [...products];
+    
+    // Status filter
+    if (statusFilter === 'active') {
+      filtered = filtered.filter(p => p.is_active);
+    } else if (statusFilter === 'inactive') {
+      filtered = filtered.filter(p => !p.is_active);
+    }
+    
+    // Category filter - support multiple categories
+    if (categoryFilter !== 'all') {
+      filtered = filtered.filter(p => {
+        // Check if product has categories array and if it includes the selected category
+        if (p.categories && Array.isArray(p.categories)) {
+          return p.categories.some((cat: any) => {
+            const categoryId = typeof cat === 'object' ? cat.id : cat;
+            return categoryId === parseInt(categoryFilter);
+          });
+        }
+        // Fallback to old category_id for backward compatibility
+        return p.category_id === parseInt(categoryFilter);
+      });
+    }
+    
+    // Search filter
+    if (searchTerm) {
+      filtered = filtered.filter(p => 
+        p.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        p.description?.toLowerCase().includes(searchTerm.toLowerCase())
+      );
+    }
+    
+    return filtered;
+  }, [products, statusFilter, categoryFilter, searchTerm]);
 
   const handleMediaError = (error: string) => {
     alert('Media upload error: ' + error);
   };
 
-  const openMediaModal = (product: any) => {
+  const openMediaModal = useCallback((product: any) => {
     setSelectedProduct(product);
     setShowMediaModal(true);
-  };
+  }, []);
 
   if (loading) {
     return (
       <div className="flex min-h-screen bg-gray-50">
         <div className="flex-1 flex items-center justify-center">
-          <div className="text-lg">Ürünler yükleniyor...</div>
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-600 mx-auto mb-4"></div>
+            <div className="text-lg text-gray-600">Ürünler yükleniyor...</div>
+            <div className="text-sm text-gray-500 mt-2">Bu işlem biraz zaman alabilir</div>
+          </div>
         </div>
       </div>
     );
@@ -288,7 +329,17 @@ export default function AdminProducts() {
     return (
       <div className="flex min-h-screen bg-gray-50">
         <div className="flex-1 flex items-center justify-center">
-          <div className="text-lg text-red-500">{error}</div>
+          <div className="text-center">
+            <div className="text-6xl mb-4">⚠️</div>
+            <div className="text-lg text-red-500 mb-2">Veri yüklenirken hata oluştu</div>
+            <div className="text-sm text-gray-600 mb-4">{error}</div>
+            <button 
+              onClick={() => window.location.reload()}
+              className="bg-orange-600 hover:bg-orange-700 text-white px-4 py-2 rounded-lg text-sm font-semibold transition-all duration-300"
+            >
+              Sayfayı Yenile
+            </button>
+          </div>
         </div>
       </div>
     );
@@ -333,55 +384,93 @@ export default function AdminProducts() {
                 </div>
                 <div className="space-y-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700">Ürün Adı</label>
+                    <label className="block text-sm font-bold text-gray-700">Ürün Adı</label>
                     <input
                       type="text"
                       value={newProduct.name}
                       onChange={(e) => setNewProduct({...newProduct, name: e.target.value})}
-                      className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                      className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 font-semibold text-gray-900"
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700">Açıklama</label>
+                    <label className="block text-sm font-bold text-gray-700">Açıklama</label>
                     <textarea
                       value={newProduct.description}
                       onChange={(e) => setNewProduct({...newProduct, description: e.target.value})}
                       rows={3}
-                      className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                      className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 font-semibold text-gray-900"
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700">Fiyat</label>
+                    <label className="block text-sm font-bold text-gray-700">Fiyat</label>
                     <input
                       type="number"
                       step="0.01"
                       value={newProduct.price}
                       onChange={(e) => setNewProduct({...newProduct, price: parseFloat(e.target.value) || 0})}
-                      className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                      className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 font-semibold text-gray-900"
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700">Kategori</label>
-                    <select
-                      value={newProduct.category_id}
-                      onChange={(e) => setNewProduct({...newProduct, category_id: parseInt(e.target.value)})}
-                      className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                    >
-                      <option value="0">Kategori seçin</option>
+                    <label className="block text-sm font-bold text-gray-700">Kategoriler</label>
+                    <div className="mt-2 space-y-2 max-h-40 overflow-y-auto border border-gray-300 rounded-md p-3">
                       {categories.map(category => (
-                        <option key={category.id} value={category.id}>
-                          {category.name}
-                        </option>
+                        <label key={category.id} className="flex items-center space-x-2 cursor-pointer">
+                          <input
+                            type="checkbox"
+                            checked={newProduct.categories.includes(category.id)}
+                            onChange={(e) => {
+                              if (e.target.checked) {
+                                setNewProduct({
+                                  ...newProduct, 
+                                  categories: [...newProduct.categories, category.id]
+                                });
+                              } else {
+                                setNewProduct({
+                                  ...newProduct, 
+                                  categories: newProduct.categories.filter(id => id !== category.id)
+                                });
+                              }
+                            }}
+                            className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                          />
+                          <span className="text-sm font-semibold text-gray-900">{category.name}</span>
+                        </label>
                       ))}
-                    </select>
+                    </div>
+                    {newProduct.categories.length > 0 && (
+                      <div className="mt-2">
+                        <p className="text-xs text-gray-500">Seçilen kategoriler:</p>
+                        <div className="flex flex-wrap gap-1 mt-1">
+                          {newProduct.categories.map(categoryId => {
+                            const category = categories.find(c => c.id === categoryId);
+                            return (
+                              <span key={categoryId} className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                                {category?.name}
+                                <button
+                                  type="button"
+                                  onClick={() => setNewProduct({
+                                    ...newProduct,
+                                    categories: newProduct.categories.filter(id => id !== categoryId)
+                                  })}
+                                  className="ml-1 text-blue-600 hover:text-blue-800"
+                                >
+                                  ×
+                                </button>
+                              </span>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    )}
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700">Stok Miktarı</label>
+                    <label className="block text-sm font-bold text-gray-700">Stok Miktarı</label>
                     <input
                       type="number"
                       value={newProduct.stock_quantity || 0}
                       onChange={(e) => setNewProduct({...newProduct, stock_quantity: parseInt(e.target.value) || 0})}
-                      className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                      className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 font-semibold text-gray-900"
                     />
                   </div>
                 </div>
@@ -426,7 +515,7 @@ export default function AdminProducts() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 {/* Product Name */}
                 <div className="md:col-span-2">
-                  <label htmlFor="edit-name" className="block text-sm font-medium text-gray-700 mb-2">
+                  <label htmlFor="edit-name" className="block text-sm font-bold text-gray-700 mb-2">
                     Ürün Adı *
                   </label>
                   <input
@@ -441,7 +530,7 @@ export default function AdminProducts() {
 
                 {/* Description */}
                 <div className="md:col-span-2">
-                  <label htmlFor="edit-description" className="block text-sm font-medium text-gray-700 mb-2">
+                  <label htmlFor="edit-description" className="block text-sm font-bold text-gray-700 mb-2">
                     Açıklama
                   </label>
                   <textarea
@@ -456,7 +545,7 @@ export default function AdminProducts() {
 
                 {/* Price */}
                 <div>
-                  <label htmlFor="edit-price" className="block text-sm font-medium text-gray-700 mb-2">
+                  <label htmlFor="edit-price" className="block text-sm font-bold text-gray-700 mb-2">
                     Fiyat *
                   </label>
                   <div className="relative">
@@ -474,29 +563,66 @@ export default function AdminProducts() {
                   </div>
                 </div>
 
-                {/* Category */}
-                <div>
-                  <label htmlFor="edit-category" className="block text-sm font-medium text-gray-700 mb-2">
-                    Kategori *
+                {/* Categories */}
+                <div className="md:col-span-2">
+                  <label className="block text-sm font-bold text-gray-700 mb-2">
+                    Kategoriler *
                   </label>
-                  <select
-                    id="edit-category"
-                    value={editingProduct.category_id}
-                    onChange={(e) => setEditingProduct({...editingProduct, category_id: parseInt(e.target.value)})}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-colors duration-200 font-semibold text-gray-900"
-                  >
-                    <option value={0}>Kategori seçin</option>
-                    {categories.map((category) => (
-                      <option key={category.id} value={category.id}>
-                        {category.name}
-                      </option>
+                  <div className="space-y-2 max-h-40 overflow-y-auto border border-gray-300 rounded-lg p-3">
+                    {categories.map(category => (
+                      <label key={category.id} className="flex items-center space-x-2 cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={editingProduct.categories?.includes(category.id) || false}
+                          onChange={(e) => {
+                            if (e.target.checked) {
+                              setEditingProduct({
+                                ...editingProduct, 
+                                categories: [...(editingProduct.categories || []), category.id]
+                              });
+                            } else {
+                              setEditingProduct({
+                                ...editingProduct, 
+                                categories: (editingProduct.categories || []).filter((id: any) => id !== category.id)
+                              });
+                            }
+                          }}
+                          className="rounded border-gray-300 text-orange-600 focus:ring-orange-500"
+                        />
+                        <span className="text-sm font-semibold text-gray-900">{category.name}</span>
+                      </label>
                     ))}
-                  </select>
+                  </div>
+                  {editingProduct.categories && editingProduct.categories.length > 0 && (
+                    <div className="mt-2">
+                      <p className="text-xs text-gray-500">Seçilen kategoriler:</p>
+                      <div className="flex flex-wrap gap-1 mt-1">
+                        {editingProduct.categories.map((categoryId: any) => {
+                          const category = categories.find(c => c.id === categoryId);
+                          return (
+                            <span key={categoryId} className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-orange-100 text-orange-800">
+                              {category?.name}
+                              <button
+                                type="button"
+                                onClick={() => setEditingProduct({
+                                  ...editingProduct,
+                                  categories: editingProduct.categories.filter((id: any) => id !== categoryId)
+                                })}
+                                className="ml-1 text-orange-600 hover:text-orange-800"
+                              >
+                                ×
+                              </button>
+                            </span>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
                 </div>
 
                 {/* Quantity */}
                 <div>
-                  <label htmlFor="edit-quantity" className="block text-sm font-medium text-gray-700 mb-2">
+                  <label htmlFor="edit-quantity" className="block text-sm font-bold text-gray-700 mb-2">
                     Stok Miktarı
                   </label>
                   <input
@@ -512,7 +638,7 @@ export default function AdminProducts() {
 
                 {/* Image URL */}
                 <div>
-                  <label htmlFor="edit-image" className="block text-sm font-medium text-gray-700 mb-2">
+                  <label htmlFor="edit-image" className="block text-sm font-bold text-gray-700 mb-2">
                     Resim URL
                   </label>
                   <input
@@ -640,7 +766,9 @@ export default function AdminProducts() {
                 <input
                   type="text"
                   placeholder="Ürünleri ara..."
-                  className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent font-semibold text-gray-900"
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
                 />
                 <div className="absolute inset-y-0 right-0 flex items-center pr-3">
                   <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -650,10 +778,14 @@ export default function AdminProducts() {
               </div>
             </div>
             <div className="flex space-x-2">
-              <select className="px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
-                <option>Tüm Kategoriler</option>
+              <select 
+                value={categoryFilter}
+                className="px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent font-semibold text-gray-900 bg-white min-w-[150px]"
+                onChange={(e) => setCategoryFilter(e.target.value)}
+              >
+                <option value="all" className="font-semibold text-gray-900">Tüm Kategoriler</option>
                 {categories.map(category => (
-                  <option key={category.id} value={category.id}>
+                  <option key={category.id} value={category.id} className="font-semibold text-gray-900">
                     {category.name}
                   </option>
                 ))}
@@ -661,11 +793,11 @@ export default function AdminProducts() {
               <select 
                 value={statusFilter}
                 onChange={(e) => setStatusFilter(e.target.value as 'all' | 'active' | 'inactive')}
-                className="px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent font-semibold text-gray-900 bg-white min-w-[120px]"
               >
-                <option value="all">Tüm Durumlar</option>
-                <option value="active">Aktif</option>
-                <option value="inactive">Pasif</option>
+                <option value="all" className="font-semibold text-gray-900">Tüm Durumlar</option>
+                <option value="active" className="font-semibold text-gray-900">Aktif</option>
+                <option value="inactive" className="font-semibold text-gray-900">Pasif</option>
               </select>
             </div>
           </div>
@@ -673,28 +805,29 @@ export default function AdminProducts() {
           {/* Products Table */}
           <div className="bg-white rounded-xl shadow-lg border border-gray-100 overflow-hidden">
             <div className="overflow-x-auto">
-              <table className="min-w-full divide-y divide-gray-200">
+              <table className="w-full divide-y divide-gray-200">
                 <thead className="bg-gradient-to-r from-gray-50 to-gray-100">
                   <tr>
-                    <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Ürün</th>
-                    <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Kategori</th>
-                    <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Fiyat</th>
-                    <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Stok</th>
-                    <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Durum</th>
-                    <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Eylemler</th>
+                    <th className="px-3 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider w-1/4">Ürün</th>
+                    <th className="px-3 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider w-1/6">Kategori</th>
+                    <th className="px-3 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider w-1/6">Fiyat</th>
+                    <th className="px-3 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider w-1/6">Stok</th>
+                    <th className="px-3 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider w-1/6">Durum</th>
+                    <th className="px-3 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider w-1/6">Eylemler</th>
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-100">
-                  {getFilteredProducts().map((product) => (
+                  {filteredProducts.map((product) => (
                     <tr key={product.id} className="hover:bg-gray-50 transition-colors duration-200">
-                      <td className="px-6 py-5 whitespace-nowrap">
+                      <td className="px-3 py-4 whitespace-nowrap">
                         <div className="flex items-center">
-                          <div className="flex-shrink-0 h-12 w-12">
+                          <div className="flex-shrink-0 h-10 w-10">
                             {product.image_url ? (
                               <img 
-                                className="h-12 w-12 rounded-lg object-cover border-2 border-gray-200" 
+                                className="h-10 w-10 rounded-lg object-cover border border-gray-200" 
                                 src={product.image_url} 
                                 alt={product.name}
+                                loading="lazy"
                                 onError={(e) => {
                                   e.currentTarget.style.display = 'none';
                                   const nextElement = e.currentTarget.nextElementSibling as HTMLElement;
@@ -705,30 +838,38 @@ export default function AdminProducts() {
                               />
                             ) : null}
                             <div 
-                              className={`h-12 w-12 rounded-lg bg-gradient-to-br from-orange-400 to-red-500 flex items-center justify-center ${product.image_url ? 'hidden' : 'flex'}`}
+                              className={`h-10 w-10 rounded-lg bg-gradient-to-br from-orange-400 to-red-500 flex items-center justify-center ${product.image_url ? 'hidden' : 'flex'}`}
                             >
-                              <span className="text-white font-bold text-lg">
+                              <span className="text-white font-bold text-sm">
                                 {product.name.charAt(0).toUpperCase()}
                               </span>
                             </div>
                           </div>
-                          <div className="ml-4">
-                            <div className="text-sm font-semibold text-gray-900">{product.name}</div>
-                            <div className="text-xs text-gray-500 truncate max-w-xs">
-                              {product.description || 'Açıklama yok'}
-                            </div>
-                            <div className="flex items-center mt-1">
-                              <span className="text-xs text-gray-400">ID: {product.id}</span>
-                            </div>
+                          <div className="ml-3">
+                            <div className="text-sm font-semibold text-gray-900 truncate max-w-32">{product.name}</div>
+                            <div className="text-xs text-gray-400">ID: {product.id}</div>
                           </div>
                         </div>
                       </td>
-                      <td className="px-6 py-5 whitespace-nowrap">
-                        <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                          {categories.find(cat => cat.id === product.category_id)?.name || 'Unknown'}
-                        </span>
+                      <td className="px-3 py-4 whitespace-nowrap">
+                        <div className="flex flex-wrap gap-1">
+                          {product.categories && product.categories.length > 0 ? (
+                            product.categories.map((category: any, index: number) => (
+                              <span 
+                                key={index}
+                                className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800"
+                              >
+                                {category.name || category}
+                              </span>
+                            ))
+                          ) : (
+                            <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-600">
+                              Kategori Yok
+                            </span>
+                          )}
+                        </div>
                       </td>
-                      <td className="px-6 py-5 whitespace-nowrap">
+                      <td className="px-3 py-4 whitespace-nowrap">
                         <div className="flex flex-col">
                           <div className="text-lg font-bold text-gray-900">₺{Math.round(product.price || 0)}</div>
                           <div className="text-xs text-gray-500">TL</div>
@@ -742,7 +883,7 @@ export default function AdminProducts() {
                           )}
                         </div>
                       </td>
-                      <td className="px-6 py-5 whitespace-nowrap">
+                      <td className="px-3 py-4 whitespace-nowrap">
                         <div className="flex items-center space-x-2">
                           <div className="flex items-center">
                             <div className="text-lg font-semibold text-gray-900">{product.stock_quantity || 0}</div>
@@ -774,7 +915,7 @@ export default function AdminProducts() {
                           )}
                         </div>
                       </td>
-                      <td className="px-6 py-5 whitespace-nowrap">
+                      <td className="px-3 py-4 whitespace-nowrap">
                         <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold
                           ${product.is_active 
                             ? "bg-green-100 text-green-800" 
@@ -786,8 +927,8 @@ export default function AdminProducts() {
                           {product.is_active ? "Aktif" : "Pasif"}
                         </span>
                       </td>
-                      <td className="px-6 py-5 whitespace-nowrap">
-                        <div className="flex items-center space-x-1">
+                      <td className="px-3 py-4 whitespace-nowrap">
+                        <div className="flex items-center space-x-2">
                           {/* Edit Button */}
                           <button 
                             title="Ürünü Düzenle"
@@ -886,8 +1027,8 @@ export default function AdminProducts() {
               <div className="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
                     <div>
                       <p className="text-sm text-gray-600">
-                        <span className="font-semibold text-gray-900">1</span> ile <span className="font-semibold text-gray-900">{getFilteredProducts().length}</span> arası gösteriliyor, toplam{' '}
-                        <span className="font-semibold text-gray-900">{getFilteredProducts().length}</span> sonuç
+                        <span className="font-semibold text-gray-900">1</span> ile <span className="font-semibold text-gray-900">{filteredProducts.length}</span> arası gösteriliyor, toplam{' '}
+                        <span className="font-semibold text-gray-900">{filteredProducts.length}</span> sonuç
                       </p>
                     </div>
                 <div>

@@ -39,10 +39,14 @@ CREATE TABLE products (
   sku TEXT UNIQUE,
   barcode TEXT,
   quantity INTEGER DEFAULT 0,
+  stock_quantity INTEGER DEFAULT 0,
   is_active BOOLEAN DEFAULT true,
   weight DECIMAL(8, 2),
   weight_unit TEXT DEFAULT 'kg',
   images TEXT[], -- Array of image URLs
+  image_url TEXT, -- Single image URL
+  media_url TEXT, -- Media URL
+  product_image TEXT, -- Product image URL
   seo_title TEXT,
   seo_description TEXT,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),

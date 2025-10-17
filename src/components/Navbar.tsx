@@ -5,7 +5,7 @@ import { usePathname } from "next/navigation";
 import { useState, useEffect } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { useCart } from "@/context/CartContext";
-import { categoryApi } from "@/services/api";
+import { categoryApi, searchApi } from "@/services/api";
 import MediaDisplay from "@/components/MediaDisplay";
 
 export default function Navbar() {
@@ -15,8 +15,14 @@ export default function Navbar() {
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [categories, setCategories] = useState<any[]>([]);
   const [categoriesLoading, setCategoriesLoading] = useState(true);
+  const [searchSuggestions, setSearchSuggestions] = useState<any[]>([]);
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const [searchLoading, setSearchLoading] = useState(false);
   const { user, signOut, isAdmin } = useAuth();
   const { cartCount } = useCart();
+
+  // Admin panelinde olup olmadığımızı kontrol et
+  const isAdminPanel = pathname.startsWith('/admin');
 
   // Kategorileri yükle
   useEffect(() => {
@@ -34,21 +40,59 @@ export default function Navbar() {
     loadCategories();
   }, []);
 
-  const navLinks = [
-    { name: "Ana Sayfa", href: "/" },
-    { name: "Oyuncaklar", href: "/categories/toys" },
-    { name: "Teknoloji", href: "/categories/technology" },
-    { name: "Temizlik & Bakım", href: "/categories/cleaning-care" },
-    { name: "Toptan Satış", href: "/categories/wholesale" },
-    { name: "Perakende", href: "/categories/retail" },
-  ];
+  // Ana sayfa her zaman sabit kalacak
+  const homeLink = { name: "Ana Sayfa", href: "/" };
+
+  // Debounced search suggestions
+  useEffect(() => {
+    const timeoutId = setTimeout(async () => {
+      if (searchQuery.trim().length >= 2) {
+        setSearchLoading(true);
+        try {
+          const response = await searchApi.getSuggestions(searchQuery.trim(), 5);
+          setSearchSuggestions(response.data);
+          setShowSuggestions(true);
+        } catch (error) {
+          console.error('Error loading search suggestions:', error);
+          setSearchSuggestions([]);
+        } finally {
+          setSearchLoading(false);
+        }
+      } else {
+        setSearchSuggestions([]);
+        setShowSuggestions(false);
+      }
+    }, 300); // 300ms debounce
+
+    return () => clearTimeout(timeoutId);
+  }, [searchQuery]);
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
     if (searchQuery.trim()) {
+      setShowSuggestions(false);
       // Redirect to search page with query parameter
       window.location.href = `/search?q=${encodeURIComponent(searchQuery.trim())}`;
     }
+  };
+
+  const handleSuggestionClick = (productId: number) => {
+    setShowSuggestions(false);
+    setSearchQuery("");
+    window.location.href = `/products/${productId}`;
+  };
+
+  const handleInputFocus = () => {
+    if (searchSuggestions.length > 0) {
+      setShowSuggestions(true);
+    }
+  };
+
+  const handleInputBlur = () => {
+    // Delay hiding suggestions to allow clicking on them
+    setTimeout(() => {
+      setShowSuggestions(false);
+    }, 200);
   };
 
   return (
@@ -72,20 +116,67 @@ export default function Navbar() {
 
           {/* Search Bar - Desktop */}
           <div className="hidden md:flex flex-1 mx-8 max-w-2xl">
-            <form onSubmit={handleSearch} className="w-full flex">
+            <form onSubmit={handleSearch} className="w-full flex relative">
               <div className="relative flex-1">
                 <input
                   type="text"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
+                  onFocus={handleInputFocus}
+                  onBlur={handleInputBlur}
                   placeholder="Ürün, marka ve daha fazlasını arayın..."
                   className="w-full px-4 py-3 pl-12 pr-4 border-2 border-gray-300 rounded-l-xl focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-all duration-300 bg-gray-50 hover:bg-white text-gray-900 placeholder-gray-500"
                 />
                 <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                  <svg className="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                  </svg>
+                  {searchLoading ? (
+                    <div className="animate-spin rounded-full h-5 w-5 border-2 border-orange-500 border-t-transparent"></div>
+                  ) : (
+                    <svg className="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                    </svg>
+                  )}
                 </div>
+                
+                {/* Search Suggestions Dropdown */}
+                {showSuggestions && searchSuggestions.length > 0 && (
+                  <div className="absolute top-full left-0 right-0 bg-white border border-gray-200 rounded-xl shadow-xl z-50 mt-1 max-h-80 overflow-y-auto">
+                    {searchSuggestions.map((suggestion) => (
+                      <div
+                        key={suggestion.id}
+                        onClick={() => handleSuggestionClick(suggestion.id)}
+                        className="flex items-center p-3 hover:bg-orange-50 cursor-pointer transition-colors duration-200 border-b border-gray-100 last:border-b-0"
+                      >
+                        <div className="w-12 h-12 bg-gray-100 rounded-lg overflow-hidden flex-shrink-0 mr-3">
+                          {suggestion.image_url ? (
+                            <MediaDisplay 
+                              mediaUrl={suggestion.image_url}
+                              alt={suggestion.name}
+                              className="w-full h-full object-cover"
+                            />
+                          ) : (
+                            <div className="w-full h-full flex items-center justify-center text-gray-400 text-lg">
+                              📦
+                            </div>
+                          )}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="font-medium text-gray-900 truncate">
+                            {suggestion.name}
+                          </div>
+                          <div className="text-sm text-orange-600 font-semibold">
+                            ₺{Math.round(suggestion.price)}
+                            {suggestion.has_price_tiers && (
+                              <span className="text-xs text-gray-500 ml-1">(Toptan fiyat mevcut)</span>
+                            )}
+                          </div>
+                        </div>
+                        <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                        </svg>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
               <button
                 type="submit"
@@ -143,9 +234,15 @@ export default function Navbar() {
                     )}
                     <div className="border-t border-gray-100 mt-2 pt-2">
                       <button
-                        onClick={() => {
-                          setShowUserMenu(false);
-                          signOut();
+                        onClick={async () => {
+                          try {
+                            setShowUserMenu(false);
+                            await signOut();
+                          } catch (error) {
+                            console.error('Sign out error:', error);
+                            // Show error message to user
+                            alert('Çıkış yapılırken bir hata oluştu. Lütfen tekrar deneyin.');
+                          }
                         }}
                         className="flex items-center w-full text-left px-4 py-3 text-sm text-red-600 hover:bg-red-50 transition-colors duration-300"
                       >
@@ -213,20 +310,67 @@ export default function Navbar() {
 
         {/* Search Bar - Mobile */}
         <div className="md:hidden mb-4">
-          <form onSubmit={handleSearch} className="flex">
+          <form onSubmit={handleSearch} className="flex relative">
             <div className="relative flex-1">
               <input
                 type="text"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
+                onFocus={handleInputFocus}
+                onBlur={handleInputBlur}
                 placeholder="Ürün, marka ve daha fazlasını arayın..."
                 className="w-full px-4 py-3 pl-12 pr-4 border-2 border-gray-300 rounded-l-xl focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-all duration-300 bg-gray-50 hover:bg-white text-gray-900 placeholder-gray-500"
               />
               <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                <svg className="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                </svg>
+                {searchLoading ? (
+                  <div className="animate-spin rounded-full h-5 w-5 border-2 border-orange-500 border-t-transparent"></div>
+                ) : (
+                  <svg className="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                  </svg>
+                )}
               </div>
+              
+              {/* Search Suggestions Dropdown - Mobile */}
+              {showSuggestions && searchSuggestions.length > 0 && (
+                <div className="absolute top-full left-0 right-0 bg-white border border-gray-200 rounded-xl shadow-xl z-50 mt-1 max-h-60 overflow-y-auto">
+                  {searchSuggestions.map((suggestion) => (
+                    <div
+                      key={suggestion.id}
+                      onClick={() => handleSuggestionClick(suggestion.id)}
+                      className="flex items-center p-3 hover:bg-orange-50 cursor-pointer transition-colors duration-200 border-b border-gray-100 last:border-b-0"
+                    >
+                      <div className="w-10 h-10 bg-gray-100 rounded-lg overflow-hidden flex-shrink-0 mr-3">
+                        {suggestion.image_url ? (
+                          <MediaDisplay 
+                            mediaUrl={suggestion.image_url}
+                            alt={suggestion.name}
+                            className="w-full h-full object-cover"
+                          />
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center text-gray-400 text-sm">
+                            📦
+                          </div>
+                        )}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="font-medium text-gray-900 truncate text-sm">
+                          {suggestion.name}
+                        </div>
+                        <div className="text-xs text-orange-600 font-semibold">
+                          ₺{Math.round(suggestion.price)}
+                          {suggestion.has_price_tiers && (
+                            <span className="text-xs text-gray-500 ml-1">(Toptan)</span>
+                          )}
+                        </div>
+                      </div>
+                      <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                      </svg>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
             <button
               type="submit"
@@ -239,83 +383,165 @@ export default function Navbar() {
           </form>
         </div>
 
-        {/* Mobile Category Navigation */}
-        <div className="md:hidden mb-4">
-          <div className="flex space-x-3 overflow-x-auto pb-2 scrollbar-hide">
-            {categoriesLoading ? (
-              // Loading skeleton
-              Array.from({ length: 6 }).map((_, i) => (
-                <div key={i} className="flex-shrink-0">
-                  <div className="w-20 h-20 bg-gray-200 rounded-xl animate-pulse"></div>
-                  <div className="w-16 h-3 bg-gray-200 rounded mt-2 animate-pulse"></div>
-                </div>
-              ))
-            ) : (
-              categories.map((category) => (
-                <Link
-                  key={category.id}
-                  href={`/categories/${category.id}`}
-                  className="flex-shrink-0 flex flex-col items-center group"
-                >
-                  <div className="w-20 h-20 bg-gray-100 rounded-xl overflow-hidden shadow-sm group-hover:shadow-lg transition-all duration-300 group-hover:scale-105">
-                    {category.image_url ? (
-                      <MediaDisplay 
-                        mediaUrl={category.image_url}
-                        alt={category.name}
-                        className="w-full h-full object-cover"
-                      />
-                    ) : (
-                      <div className="w-full h-full flex items-center justify-center text-gray-400 text-2xl font-bold">
-                        {category.name.charAt(0)}
-                      </div>
-                    )}
+        {/* Mobile Category Navigation - Admin panelinde gizle */}
+        {!isAdminPanel && (
+          <div className="md:hidden mb-4">
+            <div className="flex space-x-3 overflow-x-auto pb-2 scrollbar-hide">
+              {categoriesLoading ? (
+                // Loading skeleton
+                Array.from({ length: 6 }).map((_, i) => (
+                  <div key={i} className="flex-shrink-0">
+                    <div className="w-20 h-20 bg-gray-200 rounded-xl animate-pulse"></div>
+                    <div className="w-16 h-3 bg-gray-200 rounded mt-2 animate-pulse"></div>
                   </div>
-                  <span className="text-xs font-medium text-gray-700 mt-2 text-center group-hover:text-orange-600 transition-colors duration-300 max-w-16 truncate">
-                    {category.name}
-                  </span>
-                </Link>
-              ))
-            )}
+                ))
+              ) : (
+                categories.map((category) => (
+                  <Link
+                    key={category.id}
+                    href={`/categories/${category.id}`}
+                    className="flex-shrink-0 flex flex-col items-center group"
+                  >
+                    <div className="w-20 h-20 bg-gray-100 rounded-xl overflow-hidden shadow-sm group-hover:shadow-lg transition-all duration-300 group-hover:scale-105">
+                      {category.image_url ? (
+                        <MediaDisplay 
+                          mediaUrl={category.image_url}
+                          alt={category.name}
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center text-gray-400 text-2xl font-bold">
+                          {category.name.charAt(0)}
+                        </div>
+                      )}
+                    </div>
+                    <span className="text-xs font-medium text-gray-700 mt-2 text-center group-hover:text-orange-600 transition-colors duration-300 max-w-16 truncate">
+                      {category.name}
+                    </span>
+                  </Link>
+                ))
+              )}
+            </div>
           </div>
-        </div>
+        )}
 
-        {/* Category Navigation */}
-        <div className="hidden md:block border-t border-gray-200 py-4">
-          <div className="flex space-x-3 overflow-x-auto">
-            {navLinks.map((link) => (
+        {/* Category Navigation - Admin panelinde gizle */}
+        {!isAdminPanel && (
+          <div className="hidden md:block border-t border-gray-200 py-4">
+            <div className="flex space-x-3 overflow-x-auto">
+              {/* Ana Sayfa - Her zaman sabit */}
               <Link
-                key={link.name}
-                href={link.href}
+                key={homeLink.name}
+                href={homeLink.href}
                 className={`${
-                  pathname === link.href
+                  pathname === homeLink.href
                     ? "bg-blue-600 text-white shadow-lg transform scale-105"
                     : "bg-white text-gray-700 hover:bg-blue-50 hover:text-blue-600 hover:shadow-md border border-gray-200"
                 } px-5 py-2.5 rounded-xl font-semibold text-sm transition-all duration-300 whitespace-nowrap hover:scale-105 active:scale-95`}
               >
-                {link.name}
+                {homeLink.name}
               </Link>
-            ))}
+
+              {/* Tüm Ürünler - Her zaman sabit */}
+              <Link
+                href="/products"
+                className={`${
+                  pathname === "/products"
+                    ? "bg-orange-600 text-white shadow-lg transform scale-105"
+                    : "bg-white text-gray-700 hover:bg-orange-50 hover:text-orange-600 hover:shadow-md border border-gray-200"
+                } px-5 py-2.5 rounded-xl font-semibold text-sm transition-all duration-300 whitespace-nowrap hover:scale-105 active:scale-95`}
+              >
+                Tüm Ürünler
+              </Link>
+              
+              {/* Dinamik Kategoriler */}
+              {categoriesLoading ? (
+                // Loading skeleton for categories
+                Array.from({ length: 5 }).map((_, i) => (
+                  <div
+                    key={i}
+                    className="bg-gray-200 animate-pulse px-5 py-2.5 rounded-xl h-10 w-24"
+                  ></div>
+                ))
+              ) : (
+                categories.map((category) => (
+                  <Link
+                    key={category.id}
+                    href={`/categories/${category.id}`}
+                    className={`${
+                      pathname === `/categories/${category.id}`
+                        ? "bg-blue-600 text-white shadow-lg transform scale-105"
+                        : "bg-white text-gray-700 hover:bg-blue-50 hover:text-blue-600 hover:shadow-md border border-gray-200"
+                    } px-5 py-2.5 rounded-xl font-semibold text-sm transition-all duration-300 whitespace-nowrap hover:scale-105 active:scale-95`}
+                  >
+                    {category.name}
+                  </Link>
+                ))
+              )}
+            </div>
           </div>
-        </div>
+        )}
       </div>
 
       {/* Mobile menu */}
       <div className={`${isMenuOpen ? "block" : "hidden"} md:hidden`}>
         <div className="px-2 pt-2 pb-3 space-y-1 sm:px-3">
-          {navLinks.map((link) => (
-            <Link
-              key={link.name}
-              href={link.href}
-              className={`${
-                pathname === link.href
-                  ? "bg-blue-600 text-white shadow-lg transform scale-105"
-                  : "bg-white text-gray-700 hover:bg-blue-50 hover:text-blue-600 hover:shadow-md border border-gray-200"
-              } block px-5 py-3 rounded-xl font-semibold transition-all duration-300 hover:scale-105 active:scale-95`}
-              onClick={() => setIsMenuOpen(false)}
-            >
-              {link.name}
-            </Link>
-          ))}
+          {/* Ana Sayfa - Her zaman sabit */}
+          <Link
+            key={homeLink.name}
+            href={homeLink.href}
+            className={`${
+              pathname === homeLink.href
+                ? "bg-blue-600 text-white shadow-lg transform scale-105"
+                : "bg-white text-gray-700 hover:bg-blue-50 hover:text-blue-600 hover:shadow-md border border-gray-200"
+            } block px-5 py-3 rounded-xl font-semibold transition-all duration-300 hover:scale-105 active:scale-95`}
+            onClick={() => setIsMenuOpen(false)}
+          >
+            {homeLink.name}
+          </Link>
+
+          {/* Tüm Ürünler - Mobile */}
+          <Link
+            href="/products"
+            className={`${
+              pathname === "/products"
+                ? "bg-orange-600 text-white shadow-lg transform scale-105"
+                : "bg-white text-gray-700 hover:bg-orange-50 hover:text-orange-600 hover:shadow-md border border-gray-200"
+            } block px-5 py-3 rounded-xl font-semibold transition-all duration-300 hover:scale-105 active:scale-95`}
+            onClick={() => setIsMenuOpen(false)}
+          >
+            Tüm Ürünler
+          </Link>
+          
+          {/* Dinamik Kategoriler - Mobile - Admin panelinde gizle */}
+          {!isAdminPanel && (
+            <>
+              {categoriesLoading ? (
+                // Loading skeleton for mobile categories
+                Array.from({ length: 5 }).map((_, i) => (
+                  <div
+                    key={i}
+                    className="bg-gray-200 animate-pulse px-5 py-3 rounded-xl h-12 w-full"
+                  ></div>
+                ))
+              ) : (
+                categories.map((category) => (
+                  <Link
+                    key={category.id}
+                    href={`/categories/${category.id}`}
+                    className={`${
+                      pathname === `/categories/${category.id}`
+                        ? "bg-blue-600 text-white shadow-lg transform scale-105"
+                        : "bg-white text-gray-700 hover:bg-blue-50 hover:text-blue-600 hover:shadow-md border border-gray-200"
+                    } block px-5 py-3 rounded-xl font-semibold transition-all duration-300 hover:scale-105 active:scale-95`}
+                    onClick={() => setIsMenuOpen(false)}
+                  >
+                    {category.name}
+                  </Link>
+                ))
+              )}
+            </>
+          )}
           <div className="border-t border-gray-200 pt-4 mt-4">
             {user ? (
               <>

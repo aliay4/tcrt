@@ -20,7 +20,11 @@ interface Product {
   price: number;
   compare_price?: number;
   images?: string[];
+  image_url?: string;
+  media_url?: string;
+  product_image?: string;
   quantity: number;
+  stock_quantity?: number;
   has_price_tiers?: boolean;
 }
 
@@ -47,6 +51,10 @@ export default function CategoryDetailsPage() {
 
       setCategory(categoryRes.data);
       setProducts(productsRes.data);
+      
+      // Debug: Log product data to see what we're getting
+      console.log('Products loaded:', productsRes.data);
+      console.log('First product details:', productsRes.data[0]);
     } catch (error) {
       console.error('Error loading data:', error);
     } finally {
@@ -187,7 +195,11 @@ export default function CategoryDetailsPage() {
         ) : (
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
             {sortedProducts.map((product) => {
-              const imageUrl = product.images && product.images.length > 0 ? product.images[0] : null;
+              const imageUrl = product.images && product.images.length > 0 ? product.images[0] : 
+                              product.image_url || 
+                              product.media_url || 
+                              product.product_image ||
+                              null;
               const discount = product.compare_price 
                 ? Math.round(((product.compare_price - product.price) / product.compare_price) * 100) 
                 : 0;
@@ -222,7 +234,7 @@ export default function CategoryDetailsPage() {
                         -{discount}%
                       </div>
                     )}
-                    {product.quantity === 0 && (
+                    {((product.stock_quantity || product.quantity || 0) === 0) && (
                       <div className="absolute inset-0 bg-black bg-opacity-60 flex items-center justify-center">
                         <span className="text-white font-bold text-sm bg-red-600 px-3 py-1 rounded-full">Out of Stock</span>
                       </div>

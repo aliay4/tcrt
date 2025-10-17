@@ -8,14 +8,24 @@ export const productApi = {
   // Get all products
   getAll: async (params?: { category?: string; search?: string; status?: string }) => {
     try {
+      console.log('ProductApi.getAll called with params:', params);
       const data = await productService.getAll();
+      console.log('ProductService returned data:', data);
       
       // Apply filters if provided
-      let filteredData = data;
+      let filteredData = data || [];
       if (params?.category) {
-        filteredData = filteredData.filter(
-          (product: any) => product.category_id === parseInt(params.category || '')
-        );
+        filteredData = filteredData.filter((product: any) => {
+          // Check if product has categories array and if it includes the selected category
+          if (product.categories && Array.isArray(product.categories)) {
+            return product.categories.some((cat: any) => {
+              const categoryId = typeof cat === 'object' ? cat.id : cat;
+              return categoryId === parseInt(params.category || '');
+            });
+          }
+          // Fallback to old category_id for backward compatibility
+          return product.category_id === parseInt(params.category || '');
+        });
       }
       if (params?.search) {
         filteredData = filteredData.filter(
@@ -30,12 +40,16 @@ export const productApi = {
         );
       }
       
-      return {
+      const result = {
         success: true,
         data: filteredData,
         count: filteredData.length
       };
+      
+      console.log('ProductApi.getAll returning:', result);
+      return result;
     } catch (error) {
+      console.error('ProductApi.getAll error:', error);
       throw error;
     }
   },
@@ -98,10 +112,12 @@ export const categoryApi = {
   // Get all categories
   getAll: async (params?: { status?: string }) => {
     try {
+      console.log('CategoryApi.getAll called with params:', params);
       const data = await categoryService.getAll();
+      console.log('CategoryService returned data:', data);
       
       // Apply filters if provided
-      let filteredData = data;
+      let filteredData = data || [];
       if (params?.status) {
         const isActive = params.status.toLowerCase() === 'active';
         filteredData = filteredData.filter(
@@ -109,12 +125,16 @@ export const categoryApi = {
         );
       }
       
-      return {
+      const result = {
         success: true,
         data: filteredData,
         count: filteredData.length
       };
+      
+      console.log('CategoryApi.getAll returning:', result);
+      return result;
     } catch (error) {
+      console.error('CategoryApi.getAll error:', error);
       throw error;
     }
   },
@@ -343,6 +363,26 @@ export const customerApi = {
 
 // Price Tiers API methods - using Supabase
 export const priceTierApi = {
+  // Get all price tiers
+  getAll: async () => {
+    try {
+      const { supabase } = await import('@/lib/supabaseClient');
+      const { data, error } = await supabase
+        .from('price_tiers')
+        .select('*')
+        .order('product_id', { ascending: true });
+
+      if (error) throw error;
+
+      return {
+        success: true,
+        data: data || []
+      };
+    } catch (error) {
+      throw error;
+    }
+  },
+
   // Get price tiers for a product
   getByProductId: async (productId: number) => {
     try {
@@ -476,6 +516,175 @@ export const priceTierApi = {
       };
     } catch (error) {
       throw error;
+    }
+  }
+};
+
+// Search API methods for real-time search suggestions
+export const searchApi = {
+  // Get search suggestions for products
+  getSuggestions: async (query: string, limit: number = 5) => {
+    try {
+      if (!query || query.trim().length < 2) {
+        return {
+          success: true,
+          data: []
+        };
+      }
+
+      const response = await productApi.getAll({ 
+        search: query.trim(), 
+        status: 'active' 
+      });
+      
+      // Limit results and format for suggestions
+      const suggestions = response.data.slice(0, limit).map((product: any) => ({
+        id: product.id,
+        name: product.name,
+        price: product.price,
+        image_url: product.images && product.images.length > 0 ? product.images[0] : 
+                  product.image_url || 
+                  product.media_url || 
+                  product.product_image ||
+                  null,
+        has_price_tiers: product.has_price_tiers
+      }));
+
+      return {
+        success: true,
+        data: suggestions
+      };
+    } catch (error) {
+      console.error('Error getting search suggestions:', error);
+      return {
+        success: false,
+        data: []
+      };
+    }
+  }
+};
+
+// Similar products API methods
+export const similarProductsApi = {
+  // Get similar products based on category and price range
+  getSimilarProducts: async (productId: number, limit: number = 6) => {
+    try {
+      // First get the current product details
+      const currentProduct = await productApi.getById(productId);
+      if (!currentProduct.success) {
+        return { success: false, data: [] };
+      }
+
+      const product = currentProduct.data;
+      const categoryId = product.category_id;
+      const productPrice = product.price;
+      
+      // Get all active products
+      const allProducts = await productApi.getAll({ status: 'active' });
+      
+      // Filter similar products
+      let similarProducts = allProducts.data.filter((p: any) => 
+        p.id !== productId && // Exclude current product
+        p.is_active === true && // Only active products
+        p.stock_quantity > 0 // Only products in stock
+      );
+
+      // Prioritize by category first
+      if (categoryId) {
+        const sameCategory = similarProducts.filter((p: any) => p.category_id === categoryId);
+        const otherCategory = similarProducts.filter((p: any) => p.category_id !== categoryId);
+        
+        // Sort by price similarity within same category
+        const sortedSameCategory = sameCategory.sort((a: any, b: any) => {
+          const priceDiffA = Math.abs(a.price - productPrice);
+          const priceDiffB = Math.abs(b.price - productPrice);
+          return priceDiffA - priceDiffB;
+        });
+        
+        // Sort other categories by price similarity
+        const sortedOtherCategory = otherCategory.sort((a: any, b: any) => {
+          const priceDiffA = Math.abs(a.price - productPrice);
+          const priceDiffB = Math.abs(b.price - productPrice);
+          return priceDiffA - priceDiffB;
+        });
+        
+        similarProducts = [...sortedSameCategory, ...sortedOtherCategory];
+      } else {
+        // If no category, sort by price similarity
+        similarProducts = similarProducts.sort((a: any, b: any) => {
+          const priceDiffA = Math.abs(a.price - productPrice);
+          const priceDiffB = Math.abs(b.price - productPrice);
+          return priceDiffA - priceDiffB;
+        });
+      }
+
+      // Format and limit results
+      const formattedProducts = similarProducts.slice(0, limit).map((product: any) => ({
+        id: product.id,
+        name: product.name,
+        price: product.price,
+        compare_price: product.compare_price,
+        image_url: product.images && product.images.length > 0 ? product.images[0] : 
+                  product.image_url || 
+                  product.media_url || 
+                  product.product_image ||
+                  null,
+        has_price_tiers: product.has_price_tiers,
+        category_id: product.category_id,
+        stock_quantity: product.stock_quantity
+      }));
+
+      return {
+        success: true,
+        data: formattedProducts
+      };
+    } catch (error) {
+      console.error('Error getting similar products:', error);
+      return {
+        success: false,
+        data: []
+      };
+    }
+  },
+
+  // Get products from same category
+  getCategoryProducts: async (categoryId: number, excludeProductId: number, limit: number = 6) => {
+    try {
+      const response = await productApi.getAll({ 
+        category: categoryId.toString(), 
+        status: 'active' 
+      });
+      
+      const products = response.data
+        .filter((product: any) => 
+          product.id !== excludeProductId && 
+          product.stock_quantity > 0
+        )
+        .slice(0, limit)
+        .map((product: any) => ({
+          id: product.id,
+          name: product.name,
+          price: product.price,
+          compare_price: product.compare_price,
+          image_url: product.images && product.images.length > 0 ? product.images[0] : 
+                    product.image_url || 
+                    product.media_url || 
+                    product.product_image ||
+                    null,
+          has_price_tiers: product.has_price_tiers,
+          stock_quantity: product.stock_quantity
+        }));
+
+      return {
+        success: true,
+        data: products
+      };
+    } catch (error) {
+      console.error('Error getting category products:', error);
+      return {
+        success: false,
+        data: []
+      };
     }
   }
 };

@@ -23,9 +23,20 @@ export default function LoginPage() {
       
       // Show success message briefly
       const successMessage = document.createElement('div');
-      successMessage.className = 'fixed top-4 right-4 bg-green-500 text-white px-6 py-3 rounded-lg shadow-lg z-50';
-      successMessage.textContent = 'Login successful! Redirecting...';
+      successMessage.className = 'fixed top-4 right-4 bg-green-500 text-white px-6 py-3 rounded-lg shadow-lg z-50 transition-all duration-300';
+      successMessage.textContent = 'Giriş başarılı! Yönlendiriliyor...';
       document.body.appendChild(successMessage);
+      
+      // Hide message after 3 seconds
+      setTimeout(() => {
+        successMessage.style.opacity = '0';
+        successMessage.style.transform = 'translateX(100%)';
+        setTimeout(() => {
+          if (successMessage.parentNode) {
+            successMessage.parentNode.removeChild(successMessage);
+          }
+        }, 300);
+      }, 3000);
       
       // Redirect to home page after a brief delay
       setTimeout(() => {

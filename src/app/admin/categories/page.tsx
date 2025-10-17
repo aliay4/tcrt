@@ -1,7 +1,6 @@
 "use client";
 
-// import Link from "next/link";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import { categoryApi } from "@/services/api";
 import AdminSidebar from "@/components/AdminSidebar";
 import AdminHeader from "@/components/AdminHeader";
@@ -22,7 +21,6 @@ interface Category {
 export default function AdminCategories() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [categories, setCategories] = useState<Category[]>([]);
-  const [filteredCategories, setFilteredCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
   const [showAddForm, setShowAddForm] = useState(false);
   const [editingCategory, setEditingCategory] = useState<Category | null>(null);
@@ -43,28 +41,43 @@ export default function AdminCategories() {
   const [sortBy, setSortBy] = useState("name");
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc");
 
-  useEffect(() => {
-    fetchCategories();
-  }, []);
-
-  useEffect(() => {
-    filterAndSortCategories();
-  }, [categories, searchTerm, statusFilter, sortBy, sortOrder]);
-
-  const fetchCategories = async () => {
+  const fetchCategories = useCallback(async () => {
     try {
       setLoading(true);
-      const response = await categoryApi.getAll();
-      setCategories(response.data);
+      console.log('Fetching categories...');
+      
+      // Add timeout to prevent infinite loading
+      const timeoutPromise = new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('Request timeout')), 10000)
+      );
+      
+      const dataPromise = categoryApi.getAll();
+      
+      const response = await Promise.race([
+        dataPromise,
+        timeoutPromise
+      ]) as any;
+      
+      console.log('Categories fetched successfully:', response);
+      setCategories(response.data || []);
     } catch (error) {
       console.error('Error fetching categories:', error);
-      alert('Kategoriler yüklenemedi');
+      (window as any).toast?.error(
+        'Kategoriler Yüklenemedi',
+        `Kategoriler yüklenirken hata oluştu: ${error instanceof Error ? error.message : 'Bilinmeyen hata'}`
+      );
+      setCategories([]);
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
-  const filterAndSortCategories = () => {
+  useEffect(() => {
+    fetchCategories();
+  }, [fetchCategories]);
+
+  // Memoized filtering and sorting
+  const filteredCategories = useMemo(() => {
     let filtered = [...categories];
 
     // Arama filtresi
@@ -110,26 +123,26 @@ export default function AdminCategories() {
       }
     });
 
-    setFilteredCategories(filtered);
-    setCurrentPage(1); // Filtreleme sonrası ilk sayfaya dön
-  };
+    return filtered;
+  }, [categories, searchTerm, statusFilter, sortBy, sortOrder]);
 
-  // Sayfalama hesaplamaları
-  const totalPages = Math.ceil(filteredCategories.length / itemsPerPage);
-  const startIndex = (currentPage - 1) * itemsPerPage;
-  const endIndex = startIndex + itemsPerPage;
-  const currentCategories = filteredCategories.slice(startIndex, endIndex);
+  // Update currentPage when filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm, statusFilter, sortBy, sortOrder]);
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  // Memoized pagination calculations
+  const paginationData = useMemo(() => {
+    const totalPages = Math.ceil(filteredCategories.length / itemsPerPage);
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    const endIndex = startIndex + itemsPerPage;
+    const currentCategories = filteredCategories.slice(startIndex, endIndex);
+    
+    return { totalPages, startIndex, endIndex, currentCategories };
+  }, [filteredCategories, currentPage, itemsPerPage]);
+
+  const handleSubmit = useCallback(async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    console.log('Form data before submit:', formData);
-    console.log('Image URL specifically:', formData.image_url);
-    
-    // Eğer image_url boşsa uyarı ver
-    if (!formData.image_url || formData.image_url.trim() === '') {
-      console.warn('Image URL is empty! FormData:', formData);
-    }
     
     try {
       if (editingCategory) {
@@ -158,9 +171,9 @@ export default function AdminCategories() {
         'Kategori kaydedilemedi. Lütfen tekrar deneyin.'
       );
     }
-  };
+  }, [editingCategory, formData, categories]);
 
-  const handleEdit = (category: Category) => {
+  const handleEdit = useCallback((category: Category) => {
     setFormData({
       name: category.name,
       description: category.description || "",
@@ -169,9 +182,9 @@ export default function AdminCategories() {
     });
     setEditingCategory(category);
     setShowAddForm(true);
-  };
+  }, []);
 
-  const handleDelete = async (id: number) => {
+  const handleDelete = useCallback(async (id: number) => {
     if (confirm("Bu kategoriyi silmek istediğinizden emin misiniz?")) {
       try {
         await categoryApi.delete(id);
@@ -188,9 +201,9 @@ export default function AdminCategories() {
         );
       }
     }
-  };
+  }, [categories]);
 
-  const toggleCategoryStatus = async (category: Category) => {
+  const toggleCategoryStatus = useCallback(async (category: Category) => {
     try {
       const response = await categoryApi.update(category.id, { ...category, is_active: !category.is_active });
       setCategories(categories.map(cat => cat.id === category.id ? response.data : cat));
@@ -205,16 +218,16 @@ export default function AdminCategories() {
         'Kategori durumu güncellenemedi. Lütfen tekrar deneyin.'
       );
     }
-  };
+  }, [categories]);
 
-  const handleSort = (column: string) => {
+  const handleSort = useCallback((column: string) => {
     if (sortBy === column) {
       setSortOrder(sortOrder === "asc" ? "desc" : "asc");
     } else {
       setSortBy(column);
       setSortOrder("asc");
     }
-  };
+  }, [sortBy, sortOrder]);
 
   const cancelForm = () => {
     setFormData({ name: "", description: "", image_url: "", is_active: true });
@@ -222,31 +235,27 @@ export default function AdminCategories() {
     setEditingCategory(null);
   };
 
-  const handleMediaUpload = (mediaUrl: string) => {
-    console.log('Media upload completed, URL:', mediaUrl);
-    
+  const handleMediaUpload = useCallback((mediaUrl: string) => {
     // FormData'yı güncelle
     const updatedFormData = { ...formData, image_url: mediaUrl };
     setFormData(updatedFormData);
-    
-    console.log('Updated formData immediately:', updatedFormData);
     
     setShowMediaModal(false);
     (window as any).toast?.success(
       'Resim Yüklendi',
       'Kategori resmi başarıyla yüklendi'
     );
-  };
+  }, [formData]);
 
-  const handleMediaUploadError = (error: string) => {
+  const handleMediaUploadError = useCallback((error: string) => {
     console.error('Media upload error:', error);
     (window as any).toast?.error(
       'Yükleme Hatası',
       error
     );
-  };
+  }, []);
 
-  const openMediaModal = (category: Category) => {
+  const openMediaModal = useCallback((category: Category) => {
     setSelectedCategory(category);
     setFormData({
       name: category.name,
@@ -255,13 +264,17 @@ export default function AdminCategories() {
       is_active: category.is_active
     });
     setShowMediaModal(true);
-  };
+  }, []);
 
   if (loading) {
     return (
       <div className="flex min-h-screen bg-gray-50">
         <div className="flex-1 flex items-center justify-center">
-          <div className="text-lg">Kategoriler yükleniyor...</div>
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-600 mx-auto mb-4"></div>
+            <div className="text-lg text-gray-600 mb-2">Kategoriler yükleniyor...</div>
+            <div className="text-sm text-gray-500">Bu işlem biraz zaman alabilir</div>
+          </div>
         </div>
       </div>
     );
@@ -692,7 +705,7 @@ export default function AdminCategories() {
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
-                  {currentCategories.length === 0 ? (
+                  {paginationData.currentCategories.length === 0 ? (
                     <tr>
                       <td colSpan={6} className="px-6 py-12 text-center">
                         <div className="text-gray-500">
@@ -710,7 +723,7 @@ export default function AdminCategories() {
                       </td>
                     </tr>
                   ) : (
-                    currentCategories.map((category) => (
+                    paginationData.currentCategories.map((category) => (
                       <tr key={category.id} className="hover:bg-gray-50">
                         <td className="px-6 py-4 whitespace-nowrap">
                           <div className="flex items-center">
@@ -814,7 +827,7 @@ export default function AdminCategories() {
             </div>
             
             {/* Pagination */}
-            {filteredCategories.length > 0 && (
+            {paginationData.currentCategories.length > 0 && (
               <div className="bg-white px-4 py-3 flex items-center justify-between border-t border-gray-200 sm:px-6">
                 <div className="flex-1 flex justify-between sm:hidden">
                   <button 
@@ -825,8 +838,8 @@ export default function AdminCategories() {
                     Önceki
                   </button>
                   <button 
-                    onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
-                    disabled={currentPage === totalPages}
+                    onClick={() => setCurrentPage(Math.min(paginationData.totalPages, currentPage + 1))}
+                    disabled={currentPage === paginationData.totalPages}
                     className="ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     Sonraki
@@ -835,7 +848,7 @@ export default function AdminCategories() {
                 <div className="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
                   <div>
                     <p className="text-sm text-gray-700">
-                      <span className="font-medium">{startIndex + 1}</span> ile <span className="font-medium">{Math.min(endIndex, filteredCategories.length)}</span> arası gösteriliyor, toplam{' '}
+                      <span className="font-medium">{paginationData.startIndex + 1}</span> ile <span className="font-medium">{Math.min(paginationData.endIndex, filteredCategories.length)}</span> arası gösteriliyor, toplam{' '}
                       <span className="font-medium">{filteredCategories.length}</span> sonuç
                     </p>
                   </div>
@@ -853,10 +866,10 @@ export default function AdminCategories() {
                       </button>
                       
                       {/* Sayfa numaraları */}
-                      {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => {
+                      {Array.from({ length: paginationData.totalPages }, (_, i) => i + 1).map((page) => {
                         if (
                           page === 1 ||
-                          page === totalPages ||
+                          page === paginationData.totalPages ||
                           (page >= currentPage - 1 && page <= currentPage + 1)
                         ) {
                           return (
@@ -882,8 +895,8 @@ export default function AdminCategories() {
                       })}
                       
                       <button 
-                        onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
-                        disabled={currentPage === totalPages}
+                        onClick={() => setCurrentPage(Math.min(paginationData.totalPages, currentPage + 1))}
+                        disabled={currentPage === paginationData.totalPages}
                         className="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
                       >
                         <span className="sr-only">Sonraki</span>

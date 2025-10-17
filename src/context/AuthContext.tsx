@@ -264,13 +264,26 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const signOut = async () => {
     try {
       setError(null);
+      setLoading(true);
+      
+      // Clear local storage
+      localStorage.removeItem('favorites');
+      localStorage.removeItem('cart');
+      
+      // Sign out from Supabase
       const { error } = await supabase.auth.signOut();
       if (error) throw error;
       
+      // Clear user state
+      setUser(null);
       setIsAdmin(false);
-      router.push('/');
+      
+      // Force page refresh to clear all state
+      window.location.href = '/';
     } catch (err: any) {
-      setError(err.message || 'Failed to sign out');
+      console.error('Sign out error:', err);
+      setError(err.message || 'Çıkış yapılırken bir hata oluştu');
+      setLoading(false);
       throw err;
     }
   };
