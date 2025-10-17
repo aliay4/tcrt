@@ -43,11 +43,23 @@ export default function AdminSidebar({ sidebarOpen, setSidebarOpen }: AdminSideb
   ];
 
   return (
-    <div className={`${sidebarOpen ? "block" : "hidden"} md:block md:w-64 bg-white shadow-lg border-r border-gray-200`}>
-      <div className="p-6 border-b border-gray-200 bg-gradient-to-r from-orange-500 to-red-600">
-        <h1 className="text-xl font-bold text-white">Yönetici Paneli</h1>
-      </div>
-      <nav className="p-4">
+    <>
+      {/* Mobile Overlay */}
+      {sidebarOpen && (
+        <div 
+          className="fixed inset-0 bg-black bg-opacity-50 z-40 md:hidden"
+          onClick={() => setSidebarOpen(false)}
+        />
+      )}
+      
+      {/* Sidebar */}
+      <div className={`fixed inset-y-0 left-0 z-50 w-64 bg-white shadow-lg border-r border-gray-200 transform transition-transform duration-300 ease-in-out md:relative md:translate-x-0 ${
+        sidebarOpen ? 'translate-x-0' : '-translate-x-full'
+      }`}>
+        <div className="p-6 border-b border-gray-200 bg-gradient-to-r from-orange-500 to-red-600">
+          <h1 className="text-xl font-bold text-white">Yönetici Paneli</h1>
+        </div>
+        <nav className="p-4">
         <ul className="space-y-2">
           {menuItems.map((item) => {
             const isActive = pathname === item.href;
@@ -68,7 +80,8 @@ export default function AdminSidebar({ sidebarOpen, setSidebarOpen }: AdminSideb
             );
           })}
         </ul>
-      </nav>
-    </div>
+        </nav>
+      </div>
+    </>
   );
 }

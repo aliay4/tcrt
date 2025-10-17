@@ -181,7 +181,7 @@ export default function AdminDashboard() {
       <AdminSidebar sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} />
 
       {/* Main Content */}
-      <div className="flex-1">
+      <div className="flex-1 flex flex-col min-w-0">
         {/* Header */}
         <AdminHeader 
           title="Kontrol Paneli" 
@@ -191,14 +191,14 @@ export default function AdminDashboard() {
         >
             <button 
             onClick={() => fetchDashboardData(true)}
-            className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-semibold transition-all duration-300 hover:scale-105"
+            className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-2 rounded-lg text-xs md:text-sm font-semibold transition-all duration-300 hover:scale-105"
             >
-            🔄 Verileri Yenile
+            🔄 <span className="hidden sm:inline">Verileri Yenile</span>
             </button>
         </AdminHeader>
 
         {/* Dashboard Content */}
-        <main className="p-8">
+        <main className="p-4 md:p-8 flex-1 overflow-x-hidden">
           {loading ? (
             <div className="flex items-center justify-center h-64">
               <div className="text-center">
@@ -210,7 +210,7 @@ export default function AdminDashboard() {
           ) : (
             <>
           {/* Stats Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 mb-6 md:mb-8">
             <StatsCard
               title="Toplam Ürün"
               value={stats.totalProducts}

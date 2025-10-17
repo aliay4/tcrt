@@ -386,13 +386,12 @@ export default function Navbar() {
         {/* Mobile Category Navigation - Admin panelinde gizle */}
         {!isAdminPanel && (
           <div className="md:hidden mb-4">
-            <div className="flex space-x-3 overflow-x-auto pb-2 scrollbar-hide">
+            <div className="flex space-x-2 overflow-x-auto pb-2 scrollbar-hide">
               {categoriesLoading ? (
                 // Loading skeleton
                 Array.from({ length: 6 }).map((_, i) => (
                   <div key={i} className="flex-shrink-0">
-                    <div className="w-20 h-20 bg-gray-200 rounded-xl animate-pulse"></div>
-                    <div className="w-16 h-3 bg-gray-200 rounded mt-2 animate-pulse"></div>
+                    <div className="w-20 h-8 bg-gray-200 rounded-full animate-pulse"></div>
                   </div>
                 ))
               ) : (
@@ -400,24 +399,13 @@ export default function Navbar() {
                   <Link
                     key={category.id}
                     href={`/categories/${category.id}`}
-                    className="flex-shrink-0 flex flex-col items-center group"
+                    className={`flex-shrink-0 px-4 py-2 rounded-full text-sm font-medium transition-all duration-300 whitespace-nowrap ${
+                      pathname === `/categories/${category.id}`
+                        ? "bg-orange-600 text-white shadow-lg transform scale-105"
+                        : "bg-gray-100 text-gray-700 hover:bg-orange-100 hover:text-orange-600 hover:shadow-md border border-gray-200"
+                    }`}
                   >
-                    <div className="w-20 h-20 bg-gray-100 rounded-xl overflow-hidden shadow-sm group-hover:shadow-lg transition-all duration-300 group-hover:scale-105">
-                      {category.image_url ? (
-                        <MediaDisplay 
-                          mediaUrl={category.image_url}
-                          alt={category.name}
-                          className="w-full h-full object-cover"
-                        />
-                      ) : (
-                        <div className="w-full h-full flex items-center justify-center text-gray-400 text-2xl font-bold">
-                          {category.name.charAt(0)}
-                        </div>
-                      )}
-                    </div>
-                    <span className="text-xs font-medium text-gray-700 mt-2 text-center group-hover:text-orange-600 transition-colors duration-300 max-w-16 truncate">
-                      {category.name}
-                    </span>
+                    {category.name}
                   </Link>
                 ))
               )}
@@ -513,35 +501,7 @@ export default function Navbar() {
             Tüm Ürünler
           </Link>
           
-          {/* Dinamik Kategoriler - Mobile - Admin panelinde gizle */}
-          {!isAdminPanel && (
-            <>
-              {categoriesLoading ? (
-                // Loading skeleton for mobile categories
-                Array.from({ length: 5 }).map((_, i) => (
-                  <div
-                    key={i}
-                    className="bg-gray-200 animate-pulse px-5 py-3 rounded-xl h-12 w-full"
-                  ></div>
-                ))
-              ) : (
-                categories.map((category) => (
-                  <Link
-                    key={category.id}
-                    href={`/categories/${category.id}`}
-                    className={`${
-                      pathname === `/categories/${category.id}`
-                        ? "bg-blue-600 text-white shadow-lg transform scale-105"
-                        : "bg-white text-gray-700 hover:bg-blue-50 hover:text-blue-600 hover:shadow-md border border-gray-200"
-                    } block px-5 py-3 rounded-xl font-semibold transition-all duration-300 hover:scale-105 active:scale-95`}
-                    onClick={() => setIsMenuOpen(false)}
-                  >
-                    {category.name}
-                  </Link>
-                ))
-              )}
-            </>
-          )}
+          {/* Kategoriler zaten ekranda görünüyor, hamburger menüsünde tekrar göstermeye gerek yok */}
           <div className="border-t border-gray-200 pt-4 mt-4">
             {user ? (
               <>

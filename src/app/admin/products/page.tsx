@@ -351,7 +351,7 @@ export default function AdminProducts() {
       <AdminSidebar sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} />
 
       {/* Main Content */}
-      <div className="flex-1">
+      <div className="flex-1 flex flex-col min-w-0">
         {/* Header */}
         <AdminHeader 
           title="Ürünler" 
@@ -758,29 +758,29 @@ export default function AdminProducts() {
         )}
 
         {/* Products Content */}
-        <main className="p-6">
+        <main className="p-4 md:p-6 flex-1 overflow-x-hidden">
           {/* Filters and Search */}
-          <div className="mb-6 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+          <div className="mb-4 md:mb-6 flex flex-col space-y-4">
             <div className="flex-1">
               <div className="relative">
                 <input
                   type="text"
                   placeholder="Ürünleri ara..."
-                  className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent font-semibold text-gray-900"
+                  className="w-full px-3 py-2 md:px-4 md:py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent font-semibold text-gray-900 text-sm md:text-base"
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                 />
                 <div className="absolute inset-y-0 right-0 flex items-center pr-3">
-                  <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg className="w-4 h-4 md:w-5 md:h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                   </svg>
                 </div>
               </div>
             </div>
-            <div className="flex space-x-2">
+            <div className="flex flex-col sm:flex-row gap-2 md:gap-3">
               <select 
                 value={categoryFilter}
-                className="px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent font-semibold text-gray-900 bg-white min-w-[150px]"
+                className="w-full sm:w-auto px-3 py-2 md:px-4 md:py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent font-semibold text-gray-900 bg-white text-sm md:text-base"
                 onChange={(e) => setCategoryFilter(e.target.value)}
               >
                 <option value="all" className="font-semibold text-gray-900">Tüm Kategoriler</option>
@@ -793,7 +793,7 @@ export default function AdminProducts() {
               <select 
                 value={statusFilter}
                 onChange={(e) => setStatusFilter(e.target.value as 'all' | 'active' | 'inactive')}
-                className="px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent font-semibold text-gray-900 bg-white min-w-[120px]"
+                className="w-full sm:w-auto px-3 py-2 md:px-4 md:py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent font-semibold text-gray-900 bg-white text-sm md:text-base"
               >
                 <option value="all" className="font-semibold text-gray-900">Tüm Durumlar</option>
                 <option value="active" className="font-semibold text-gray-900">Aktif</option>

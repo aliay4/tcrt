@@ -286,7 +286,7 @@ export default function AdminCategories() {
       <AdminSidebar sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} />
 
       {/* Main Content */}
-      <div className="flex-1">
+      <div className="flex-1 flex flex-col min-w-0">
         {/* Header */}
         <AdminHeader 
           title="Kategoriler" 
@@ -528,12 +528,12 @@ export default function AdminCategories() {
         )}
 
         {/* Categories Content */}
-        <main className="p-6">
+        <main className="p-4 md:p-6 flex-1 overflow-x-hidden">
           {/* Filtreleme ve Arama Bölümü */}
-          <div className="bg-white rounded-lg shadow-sm p-6 mb-6">
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <div className="bg-white rounded-lg shadow-sm p-4 md:p-6 mb-4 md:mb-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
               {/* Arama */}
-              <div className="md:col-span-2">
+              <div className="sm:col-span-2 lg:col-span-2">
                 <label htmlFor="search" className="block text-sm font-bold text-gray-700 mb-2">
                   Kategori Ara
                 </label>
@@ -549,7 +549,7 @@ export default function AdminCategories() {
                     placeholder="Kategori adı veya açıklama ara..."
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
-                    className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-orange-500 focus:border-orange-500 font-semibold text-gray-900"
+                    className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-orange-500 focus:border-orange-500 font-semibold text-gray-900 text-sm md:text-base"
                   />
                 </div>
               </div>
