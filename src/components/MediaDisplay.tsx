@@ -19,6 +19,7 @@ interface MediaDisplayProps {
   alt?: string;
   showPrimaryOnly?: boolean;
   className?: string;
+  isThumbnail?: boolean; // Thumbnail modu - video oynatılmasın
 }
 
 export default function MediaDisplay({ 
@@ -26,7 +27,8 @@ export default function MediaDisplay({
   mediaUrl,
   alt = '',
   showPrimaryOnly = false, 
-  className = '' 
+  className = '',
+  isThumbnail = false
 }: MediaDisplayProps) {
   const [mediaItems, setMediaItems] = useState<MediaItem[]>([]);
   const [loading, setLoading] = useState(true);
@@ -128,6 +130,50 @@ export default function MediaDisplay({
 
   // Basit URL gösterimi için
   if (mediaUrl) {
+    // URL'nin video olup olmadığını kontrol et
+    const isVideo = mediaUrl.match(/\.(mp4|webm|ogg|mov|avi|wmv|flv)(\?|$)/i) || 
+                    mediaUrl.includes('video') ||
+                    mediaUrl.includes('video/');
+    
+    if (isVideo) {
+      // Thumbnail modunda video oynatılmasın, sadece ilk frame gösterilsin
+      if (isThumbnail) {
+        return (
+          <div className={`relative ${className}`}>
+            <video
+              src={mediaUrl}
+              className="w-full h-full object-cover pointer-events-none"
+              preload="metadata"
+              muted
+              onError={(e) => {
+                (e.target as HTMLVideoElement).style.display = 'none';
+              }}
+            />
+            {/* Video ikonu overlay - pointer-events-none ile tıklama button'a geçer */}
+            <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-20 pointer-events-none">
+              <svg className="w-12 h-12 text-white opacity-80" fill="currentColor" viewBox="0 0 20 20">
+                <path d="M6.3 2.841A1.5 1.5 0 004 4.11V15.89a1.5 1.5 0 002.3 1.269l9.344-5.89a1.5 1.5 0 000-2.538L6.3 2.84z" />
+              </svg>
+            </div>
+          </div>
+        );
+      }
+      
+      // Ana görünümde tam video player
+      return (
+        <video
+          src={mediaUrl}
+          className={className}
+          controls
+          onError={(e) => {
+            (e.target as HTMLVideoElement).style.display = 'none';
+          }}
+        >
+          Tarayıcınız video oynatmayı desteklemiyor.
+        </video>
+      );
+    }
+    
     return (
       <img 
         src={mediaUrl} 

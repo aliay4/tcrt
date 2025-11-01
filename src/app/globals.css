@@ -37,6 +37,16 @@ body {
 /* Swiper Custom Styles */
 .featured-products-swiper {
   padding: 0 60px;
+  overflow: visible !important;
+}
+
+.featured-products-swiper .swiper-wrapper {
+  overflow: visible !important;
+}
+
+.featured-products-swiper .swiper-slide {
+  overflow: visible !important;
+  height: auto !important;
 }
 
 .featured-products-swiper .swiper-button-prev-featured,

@@ -93,9 +93,7 @@ export default function LoginPage() {
                     Şifre
                   </label>
                   <div className="text-sm">
-                    <Link href="#" className="font-medium text-orange-600 hover:text-orange-500">
-                      Şifremi unuttum?
-                    </Link>
+                    <Link href="/auth/forgot-password" className="font-medium text-orange-600 hover:text-orange-500">Şifremi unuttum?</Link>
                   </div>
                 </div>
                      <input

@@ -114,11 +114,28 @@ export default function Home() {
                       product.product_image ||
                       null;
       const discount = product.compare_price ? Math.round(((product.compare_price - product.price) / product.compare_price) * 100) : 0;
+      const priceTiers = priceTiersMap[product.id] || [];
 
       return (
         <Link 
           href={`/products/${product.id}`}
-          className="bg-white rounded-xl shadow-sm hover:shadow-lg transition-all duration-300 group hover:scale-105 border border-gray-100"
+          className="!bg-white !rounded-xl !shadow-lg !border-2 !border-orange-200 hover:!border-orange-500 !transition-all !duration-300 group hover:!scale-105 !block"
+          style={{
+            backgroundColor: 'white',
+            borderRadius: '12px',
+            boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)',
+            border: '2px solid #fed7aa',
+            display: 'block',
+            transition: 'all 0.3s ease'
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.borderColor = '#f97316';
+            e.currentTarget.style.transform = 'scale(1.05)';
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.borderColor = '#fed7aa';
+            e.currentTarget.style.transform = 'scale(1)';
+          }}
         >
           <div className="relative">
             <div className="bg-gray-100 w-full h-40 rounded-t-xl overflow-hidden">
@@ -139,7 +156,7 @@ export default function Home() {
                 YENİ
               </div>
             )}
-            {product.has_price_tiers && priceTiersMap[product.id] && (
+            {product.has_price_tiers && priceTiers.length > 0 && (
               <div className="absolute top-3 right-3 bg-orange-500 text-white text-xs font-bold px-2 py-1 rounded-full">
                 Toptan Fiyat
               </div>
@@ -154,27 +171,39 @@ export default function Home() {
             <h3 className="font-semibold text-gray-900 line-clamp-2 h-10 group-hover:text-orange-600 transition-colors duration-300 text-sm">
               {product.name}
             </h3>
-            <div className="mt-2 flex items-center">
-              {product.has_price_tiers && priceTiersMap[product.id] ? (
-                <>
-                  <span className="text-lg font-bold text-orange-600">
-                    ₺{Math.round(getLowestPrice(priceTiersMap[product.id], product.price))}'den başlayan
-                  </span>
-                  <span className="ml-2 text-sm text-gray-500 line-through">
-                    ₺{Math.round(product.price)}
-                  </span>
-                </>
-              ) : (
-                <>
-                  <span className="text-lg font-bold text-orange-600">₺{Math.round(product.price)}</span>
-                  {product.compare_price && (
-                    <span className="ml-2 text-sm text-gray-500 line-through">
-                      ₺{Math.round(product.compare_price)}
-                    </span>
+            
+            {/* Fiyat Karşılaştırma Tablosu */}
+            {product.has_price_tiers && priceTiers.length > 0 ? (
+              <div className="mt-3">
+                <div className="text-sm font-medium text-gray-700 mb-3">💰 Fiyat Seçenekleri:</div>
+                <div className="bg-gray-50 rounded-lg p-3 space-y-2">
+                  {/* Toptan fiyat seviyeleri */}
+                  {priceTiers.slice(0, 3).map((tier: any, index: number) => {
+                    return (
+                      <div key={tier.id} className="flex justify-between items-center text-sm">
+                        <span className="text-gray-700 font-medium">{tier.min_quantity}+ adet</span>
+                        <span className="font-bold text-orange-600">₺{Math.round(tier.price)}</span>
+                      </div>
+                    );
+                  })}
+                  
+                  {priceTiers.length > 3 && (
+                    <div className="text-center pt-2 border-t border-gray-200">
+                      <span className="text-sm text-orange-600 font-medium">+{priceTiers.length - 3} seçenek daha</span>
+                    </div>
                   )}
-                </>
-              )}
-            </div>
+                </div>
+              </div>
+            ) : (
+              <div className="mt-2 flex items-center">
+                <span className="text-lg font-bold text-orange-600">₺{Math.round(product.price)}</span>
+                {product.compare_price && (
+                  <span className="ml-2 text-sm text-gray-500 line-through">
+                    ₺{Math.round(product.compare_price)}
+                  </span>
+                )}
+              </div>
+            )}
           </div>
         </Link>
       );
@@ -371,7 +400,7 @@ export default function Home() {
             </div>
           </div>
         ) : (
-          <div className="relative">
+          <div className="relative py-4">
             <Swiper
               modules={[Navigation, Pagination, Autoplay]}
               spaceBetween={24}
@@ -407,9 +436,14 @@ export default function Home() {
                 },
               }}
               className="featured-products-swiper"
+              style={{
+                overflow: 'visible',
+                paddingTop: '16px',
+                paddingBottom: '16px'
+              }}
             >
               {featuredProducts.map((product) => (
-                <SwiperSlide key={product.id}>
+                <SwiperSlide key={product.id} style={{ overflow: 'visible', height: 'auto' }}>
                   <ProductCard product={product} />
                 </SwiperSlide>
               ))}

@@ -107,47 +107,55 @@ export default function CategoryDetailsPage() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Category Header with Image */}
-      <div className="bg-white border-b border-gray-200 py-8">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between">
+      {/* Category Header with Enhanced Design */}
+      <div className="relative bg-gradient-to-r from-orange-500 via-red-500 to-pink-500 py-12 overflow-hidden">
+        {/* Background Pattern */}
+        <div className="absolute inset-0 bg-black/10"></div>
+        <div className="absolute top-0 right-0 w-96 h-96 bg-white/5 rounded-full -translate-y-48 translate-x-48"></div>
+        <div className="absolute bottom-0 left-0 w-64 h-64 bg-white/5 rounded-full translate-y-32 -translate-x-32"></div>
+        
+        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex items-center justify-center">
+            {/* Category Info */}
             <div className="flex items-center space-x-6">
-              {/* Category Image */}
-              <div className="flex-shrink-0">
+              {/* Enhanced Category Image */}
+              <div className="relative">
                 {category.image_url ? (
-                  <MediaDisplay 
-                    mediaUrl={category.image_url}
-                    alt={category.name}
-                    className="w-20 h-20 rounded-xl object-cover shadow-lg"
-                  />
+                  <div className="relative">
+                    <MediaDisplay 
+                      mediaUrl={category.image_url}
+                      alt={category.name}
+                      className="w-24 h-24 rounded-2xl object-cover shadow-2xl ring-4 ring-white/30"
+                    />
+                    <div className="absolute -top-2 -right-2 w-8 h-8 bg-white rounded-full flex items-center justify-center shadow-lg">
+                      <span className="text-orange-600 text-sm font-bold">📦</span>
+                    </div>
+                  </div>
                 ) : (
-                  <div className="w-20 h-20 bg-gradient-to-br from-orange-400 to-orange-600 rounded-xl flex items-center justify-center text-white text-2xl font-bold shadow-lg">
+                  <div className="w-24 h-24 bg-gradient-to-br from-white/20 to-white/10 backdrop-blur-sm rounded-2xl flex items-center justify-center text-white text-3xl font-bold shadow-2xl ring-4 ring-white/30">
                     {category.name.charAt(0)}
                   </div>
                 )}
               </div>
               
-              {/* Category Info */}
-              <div>
-                <h1 className="text-3xl font-bold text-gray-900">{category.name}</h1>
+              {/* Enhanced Category Info */}
+              <div className="text-white">
+                <h1 className="text-4xl font-bold mb-2 drop-shadow-lg">{category.name}</h1>
                 {category.description && (
-                  <p className="text-gray-600 mt-2 text-lg">{category.description}</p>
+                  <p className="text-white/90 text-lg mb-3 drop-shadow-md">{category.description}</p>
                 )}
-                <div className="mt-3 text-sm text-gray-500">
-                  <span className="font-semibold text-gray-900">{sortedProducts.length}</span> ürün bulundu
+                <div className="flex items-center space-x-4">
+                  <div className="bg-white/20 backdrop-blur-sm rounded-full px-4 py-2">
+                    <span className="text-white font-bold text-lg">{sortedProducts.length}</span>
+                    <span className="text-white/90 ml-1">ürün</span>
+                  </div>
+                  <div className="bg-white/20 backdrop-blur-sm rounded-full px-4 py-2">
+                    <span className="text-white/90 text-sm">🎯 Popüler kategori</span>
+                  </div>
                 </div>
               </div>
             </div>
             
-            <Link 
-              href="/categories" 
-              className="text-orange-600 hover:text-orange-700 font-medium flex items-center bg-orange-50 hover:bg-orange-100 px-4 py-2 rounded-lg transition-colors duration-200"
-            >
-              <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
-              </svg>
-              Kategorilere Dön
-            </Link>
           </div>
         </div>
       </div>

@@ -58,6 +58,23 @@ export default function ProductDetail() {
     }
   }, [productId]);
 
+  // Klavye ok tuşları ile medya geçişi
+  useEffect(() => {
+    if (!product || !product.images || product.images.length <= 1) return;
+
+    const imagesArray = product.images || [];
+    const handleKeyPress = (e: KeyboardEvent) => {
+      if (e.key === 'ArrowLeft') {
+        setSelectedImageIndex((prev) => (prev > 0 ? prev - 1 : imagesArray.length - 1));
+      } else if (e.key === 'ArrowRight') {
+        setSelectedImageIndex((prev) => (prev < imagesArray.length - 1 ? prev + 1 : 0));
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyPress);
+    return () => window.removeEventListener('keydown', handleKeyPress);
+  }, [product]);
+
   const loadProduct = async () => {
     try {
       setLoading(true);
@@ -200,7 +217,7 @@ export default function ProductDetail() {
           {/* Product Images */}
           <div className="space-y-4">
             {/* Main Image */}
-            <div className="bg-white rounded-xl shadow-sm overflow-hidden">
+            <div className="bg-white rounded-xl shadow-sm overflow-hidden relative group">
               <div className="aspect-square bg-gray-100">
                 {mainImage ? (
                   <MediaDisplay
@@ -214,6 +231,33 @@ export default function ProductDetail() {
                   </div>
                 )}
               </div>
+              
+              {/* Soluk ok butonları - sadece birden fazla medya varsa göster */}
+              {images.length > 1 && (
+                <>
+                  {/* Sol ok */}
+                  <button
+                    onClick={() => setSelectedImageIndex((prev) => (prev > 0 ? prev - 1 : images.length - 1))}
+                    className="absolute left-2 top-1/2 -translate-y-1/2 bg-black/20 hover:bg-black/40 text-white rounded-full p-2 opacity-30 hover:opacity-80 transition-all duration-200 backdrop-blur-sm group-hover:opacity-60"
+                    aria-label="Önceki medya"
+                  >
+                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                    </svg>
+                  </button>
+                  
+                  {/* Sağ ok */}
+                  <button
+                    onClick={() => setSelectedImageIndex((prev) => (prev < images.length - 1 ? prev + 1 : 0))}
+                    className="absolute right-2 top-1/2 -translate-y-1/2 bg-black/20 hover:bg-black/40 text-white rounded-full p-2 opacity-30 hover:opacity-80 transition-all duration-200 backdrop-blur-sm group-hover:opacity-60"
+                    aria-label="Sonraki medya"
+                  >
+                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                    </svg>
+                  </button>
+                </>
+              )}
             </div>
 
             {/* Thumbnail Images */}
@@ -233,6 +277,7 @@ export default function ProductDetail() {
                       mediaUrl={image}
                       alt={`${product.name} ${index + 1}`}
                       className="w-full h-full object-cover"
+                      isThumbnail={true}
                     />
                   </button>
                 ))}
