@@ -110,7 +110,7 @@ export default function Navbar() {
                 height={75}
                 className="mr-2 md:mr-3 group-hover:scale-105 transition-transform duration-300 h-12 w-12 md:h-[75px] md:w-[75px]"
               />
-              <span className="text-lg md:text-2xl font-bold bg-gradient-to-r from-orange-600 to-red-600 bg-clip-text text-transparent group-hover:from-red-600 group-hover:to-orange-600 transition-all duration-300 truncate">
+              <span className="text-xl md:text-3xl font-bold bg-gradient-to-r from-orange-600 to-red-600 bg-clip-text text-transparent group-hover:from-red-600 group-hover:to-orange-600 transition-all duration-300 truncate">
                 Yüksel Ticaret
               </span>
             </Link>
