@@ -10,7 +10,7 @@ interface WhatsAppButtonProps {
 
 export default function WhatsAppButton({ 
   phoneNumber = "905551234567", // Varsayılan telefon numarası
-  message = "Merhaba! TrendyShop müşteri hizmetlerine ulaşmak istiyorum.",
+  message = "Merhaba! Yüksel Ticaret müşteri hizmetlerine ulaşmak istiyorum.",
   position = 'bottom-right'
 }: WhatsAppButtonProps) {
   const [isVisible, setIsVisible] = useState(false);

@@ -20,7 +20,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "TrendyShop - E-Ticaret Platformu",
+  title: "Yüksel Ticaret - E-Ticaret Platformu",
   description: "Next.js ile geliştirilmiş modern bir e-ticaret platformu",
 };
 
@@ -45,7 +45,7 @@ export default function RootLayout({
               <ToastContainer />
               <WhatsAppButton 
                 phoneNumber="905551234567"
-                message="Merhaba! TrendyShop müşteri hizmetlerine ulaşmak istiyorum. Yardımcı olabilir misiniz?"
+                message="Merhaba! Yüksel Ticaret müşteri hizmetlerine ulaşmak istiyorum. Yardımcı olabilir misiniz?"
                 position="bottom-right"
               />
             </FavoritesProvider>

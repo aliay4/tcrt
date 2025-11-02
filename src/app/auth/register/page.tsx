@@ -56,7 +56,7 @@ export default function RegisterPage() {
       {/* Hero Section */}
       <div className="bg-gradient-to-r from-orange-500 to-red-600 py-16 text-white">
         <div className="max-w-md mx-auto px-6 text-center">
-          <h1 className="text-4xl font-bold mb-4">TrendyShop'a Katılın!</h1>
+          <h1 className="text-4xl font-bold mb-4">Yüksel Ticaret'e Katılın!</h1>
           <p className="text-xl text-white/90">Hesabınızı oluşturun ve alışverişe başlayın</p>
         </div>
       </div>

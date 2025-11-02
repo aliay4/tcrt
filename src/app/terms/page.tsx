@@ -8,7 +8,7 @@ export default function TermsPage() {
         <div className="text-center mb-12">
           <h1 className="text-4xl font-bold text-gray-900 mb-4">Şartlar ve Koşullar</h1>
           <p className="text-lg text-gray-600">
-            TrendyShop kullanım şartları ve koşulları
+            Yüksel Ticaret kullanım şartları ve koşulları
           </p>
           <p className="text-sm text-gray-500 mt-2">
             Son güncelleme: 1 Ocak 2025
@@ -22,11 +22,11 @@ export default function TermsPage() {
             <section className="mb-8">
               <h2 className="text-2xl font-bold text-gray-900 mb-4">1. Genel Hükümler</h2>
               <p className="text-gray-700 mb-4">
-                Bu şartlar ve koşullar, TrendyShop web sitesi ve mobil uygulaması üzerinden yapılan tüm işlemleri kapsar. 
+                Bu şartlar ve koşullar, Yüksel Ticaret web sitesi ve mobil uygulaması üzerinden yapılan tüm işlemleri kapsar. 
                 Siteyi kullanarak bu şartları kabul etmiş sayılırsınız.
               </p>
               <p className="text-gray-700 mb-4">
-                TrendyShop, bu şartları önceden haber vermeksizin değiştirme hakkını saklı tutar. 
+                Yüksel Ticaret, bu şartları önceden haber vermeksizin değiştirme hakkını saklı tutar. 
                 Değişiklikler site üzerinde yayınlandığı tarihten itibaren geçerli olur.
               </p>
             </section>
@@ -103,7 +103,7 @@ export default function TermsPage() {
             <section className="mb-8">
               <h2 className="text-2xl font-bold text-gray-900 mb-4">7. Sorumluluk Sınırları</h2>
               <p className="text-gray-700 mb-4">
-                TrendyShop, mücbir sebep durumlarında sorumluluk kabul etmez. 
+                Yüksel Ticaret, mücbir sebep durumlarında sorumluluk kabul etmez. 
                 Mücbir sebep: Doğal afetler, savaş, grev, hükümet kararları vb.
               </p>
               <ul className="list-disc list-inside text-gray-700 mb-4">
@@ -117,7 +117,7 @@ export default function TermsPage() {
             <section className="mb-8">
               <h2 className="text-2xl font-bold text-gray-900 mb-4">8. Fikri Mülkiyet Hakları</h2>
               <p className="text-gray-700 mb-4">
-                Site içeriği, tasarım ve yazılım TrendyShop'un fikri mülkiyetidir. 
+                Site içeriği, tasarım ve yazılım Yüksel Ticaret'in fikri mülkiyetidir. 
                 İzinsiz kullanım yasaktır.
               </p>
               <ul className="list-disc list-inside text-gray-700 mb-4">
@@ -150,10 +150,10 @@ export default function TermsPage() {
               <div className="bg-gray-50 p-6 rounded-lg">
                 <h3 className="font-semibold text-gray-900 mb-4">İletişim Bilgileri</h3>
                 <ul className="space-y-2 text-gray-700">
-                  <li>📧 E-posta: info@trendyshop.com</li>
+                  <li>📧 E-posta: info@yukselticaret.com</li>
                   <li>📞 Telefon: +90 555 123 45 67</li>
                   <li>💬 WhatsApp: +90 555 123 45 67</li>
-                  <li>🌐 Web: www.trendyshop.com</li>
+                  <li>🌐 Web: www.yukselticaret.com</li>
                 </ul>
               </div>
             </section>

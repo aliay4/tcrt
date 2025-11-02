@@ -32,7 +32,7 @@ export default function ContactPage() {
               </svg>
             </div>
             <h3 className="text-2xl font-bold text-gray-900 mb-4">E-posta</h3>
-            <p className="text-lg text-gray-600 mb-2">support@trendyshop.com</p>
+            <p className="text-lg text-gray-600 mb-2">support@yukselticaret.com</p>
             <p className="text-gray-500">24 saat içinde yanıt veririz</p>
           </div>
           

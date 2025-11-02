@@ -56,7 +56,7 @@ export default function LoginPage() {
       <div className="bg-gradient-to-r from-orange-500 to-red-600 py-16 text-white">
         <div className="max-w-md mx-auto px-6 text-center">
           <h1 className="text-4xl font-bold mb-4">Tekrar Hoş Geldiniz!</h1>
-          <p className="text-xl text-white/90">TrendyShop hesabınıza giriş yapın</p>
+          <p className="text-xl text-white/90">Yüksel Ticaret hesabınıza giriş yapın</p>
         </div>
       </div>
 

@@ -22,7 +22,7 @@ export default function PrivacyPage() {
             <section className="mb-8">
               <h2 className="text-2xl font-bold text-gray-900 mb-4">1. Giriş</h2>
               <p className="text-gray-700 mb-4">
-                TrendyShop olarak, kişisel verilerinizin güvenliği ve gizliliği bizim için öncelikli konulardan biridir. 
+                Yüksel Ticaret olarak, kişisel verilerinizin güvenliği ve gizliliği bizim için öncelikli konulardan biridir. 
                 Bu gizlilik politikası, kişisel verilerinizin nasıl toplandığı, kullanıldığı ve korunduğu hakkında bilgi verir.
               </p>
               <p className="text-gray-700 mb-4">
@@ -266,7 +266,7 @@ export default function PrivacyPage() {
                   <div>
                     <h4 className="font-semibold text-gray-800 mb-2">İletişim Bilgileri</h4>
                     <ul className="space-y-1 text-gray-700">
-                      <li>📧 E-posta: privacy@trendyshop.com</li>
+                      <li>📧 E-posta: privacy@yukselticaret.com</li>
                       <li>📞 Telefon: +90 555 123 45 67</li>
                       <li>💬 WhatsApp: +90 555 123 45 67</li>
                     </ul>
@@ -274,7 +274,7 @@ export default function PrivacyPage() {
                   <div>
                     <h4 className="font-semibold text-gray-800 mb-2">Posta Adresi</h4>
                     <p className="text-gray-700">
-                      TrendyShop A.Ş.<br />
+                      Yüksel Ticaret A.Ş.<br />
                       Veri Koruma Birimi<br />
                       İstanbul, Türkiye
                     </p>
@@ -300,7 +300,7 @@ export default function PrivacyPage() {
               İletişime Geç
             </a>
             <a
-              href="mailto:privacy@trendyshop.com"
+              href="mailto:privacy@yukselticaret.com"
               className="bg-white text-orange-600 px-6 py-3 rounded-lg font-semibold hover:bg-gray-100 transition-colors duration-300"
             >
               E-posta Gönder

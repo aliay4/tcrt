@@ -24,7 +24,7 @@ export default function TrackOrderPage() {
           {
             date: '2025-01-18 14:30',
             status: 'Sipariş Onaylandı',
-            location: 'TrendyShop Depo'
+            location: 'Yüksel Ticaret Depo'
           },
           {
             date: '2025-01-18 16:45',

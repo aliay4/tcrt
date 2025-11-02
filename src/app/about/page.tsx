@@ -6,7 +6,7 @@ export default function AboutPage() {
       {/* Hero Section */}
       <div className="bg-gradient-to-r from-orange-500 to-red-600 py-16 text-white">
         <div className="max-w-7xl mx-auto px-6 text-center">
-          <h1 className="text-5xl font-bold mb-6">TrendyShop Hakkında</h1>
+          <h1 className="text-5xl font-bold mb-6">Yüksel Ticaret Hakkında</h1>
           <p className="text-xl text-white/90 max-w-3xl mx-auto">
             Kaliteli ürünler ve olağanüstü hizmetle en iyi online alışveriş deneyimini sunmaya adadık.
           </p>
@@ -19,7 +19,7 @@ export default function AboutPage() {
           <div>
             <h2 className="text-4xl font-bold text-gray-900 mb-6">Hikayemiz</h2>
             <p className="text-lg text-gray-600 mb-6">
-              2025 yılında kurulan TrendyShop, basit bir misyonla başladı: kaliteli ürünleri herkese, her yerde erişilebilir kılmak. 
+              2025 yılında kurulan Yüksel Ticaret, basit bir misyonla başladı: kaliteli ürünleri herkese, her yerde erişilebilir kılmak. 
               Küçük bir online mağaza olarak başlayan işimiz, birden fazla kategoride binlerce ürün içeren kapsamlı bir platforma dönüştü.
             </p>
             <p className="text-lg text-gray-600 mb-6">

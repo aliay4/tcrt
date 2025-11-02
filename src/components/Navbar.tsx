@@ -105,7 +105,7 @@ export default function Navbar() {
             <Link href="/" className="flex-shrink-0 flex items-center group">
               <Image
                 src="/ikon.svg"
-                alt="TrendyShop Logo"
+                alt="Yüksel Ticaret Logo"
                 width={75}
                 height={75}
                 className="mr-2 md:mr-3 group-hover:scale-105 transition-transform duration-300 h-12 w-12 md:h-[75px] md:w-[75px]"
