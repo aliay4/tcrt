@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 
 export default function Footer() {
   return (
@@ -6,14 +7,16 @@ export default function Footer() {
       <div className="max-w-7xl mx-auto py-12 px-4 sm:px-6 lg:px-8">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
           <div>
-            <h3 className="text-lg font-bold text-gray-900 mb-4">TrendyShop</h3>
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-sm font-semibold text-gray-900 uppercase tracking-wider">Yüksel Ticaret</h3>
+            </div>
             <p className="text-gray-600 mb-4">
               Tüm alışveriş ihtiyaçlarınız için tek durak noktası. Uygun fiyatlarla kaliteli ürünler.
             </p>
             <div className="flex space-x-4">
-              <Link 
-                href="https://m.facebook.com/100055965937535/" 
-                target="_blank" 
+              <Link
+                href="https://m.facebook.com/100055965937535/"
+                target="_blank"
                 rel="noopener noreferrer"
                 className="text-blue-600 hover:text-blue-800 transition-colors duration-300"
               >
@@ -22,9 +25,9 @@ export default function Footer() {
                   <path fillRule="evenodd" d="M22 12c0-5.523-4.477-10-10-10S2 6.477 2 12c0 4.991 3.657 9.128 8.438 9.878v-6.987h-2.54V12h2.54V9.797c0-2.506 1.492-3.89 3.777-3.89 1.094 0 2.238.195 2.238.195v2.46h-1.26c-1.243 0-1.63.771-1.63 1.562V12h2.773l-.443 2.89h-2.33v6.988C18.343 21.128 22 16.991 22 12z" clipRule="evenodd" />
                 </svg>
               </Link>
-              <Link 
-                href="https://www.instagram.com/yuksel_ticarett?igsh=cWEwMXZlYmJiam03" 
-                target="_blank" 
+              <Link
+                href="https://www.instagram.com/yuksel_ticarett?igsh=cWEwMXZlYmJiam03"
+                target="_blank"
                 rel="noopener noreferrer"
                 className="text-pink-600 hover:text-pink-800 transition-colors duration-300"
               >
@@ -72,7 +75,7 @@ export default function Footer() {
             <ul className="space-y-3">
               <li>
                 <Link href="/about" className="text-gray-600 hover:text-blue-600">
-                  TrendyShop Hakkında
+                  Yüksel Ticaret Hakkında
                 </Link>
               </li>
               <li>
@@ -91,7 +94,7 @@ export default function Footer() {
         </div>
         
         <div className="mt-12 border-t border-gray-200 pt-8 flex flex-col md:flex-row justify-between items-center">
-          <p className="text-gray-600">© 2025 TrendyShop. Tüm hakları saklıdır.</p>
+          <p className="text-gray-600">© 2025 Yüksel Ticaret. Tüm hakları saklıdır.</p>
           <div className="mt-4 md:mt-0 flex space-x-6">
             <img src="/payment-methods.png" alt="Ödeme yöntemleri" className="h-8" />
           </div>

@@ -108,6 +108,7 @@ export default function Home() {
   // Memoized components for better performance
   const ProductCard = useMemo(() => {
     const ProductItem = ({ product, isNew = false }: { product: Product; isNew?: boolean }) => {
+      const [showPrices, setShowPrices] = useState(false);
       const imageUrl = product.images && product.images.length > 0 ? product.images[0] : 
                       product.image_url || 
                       product.media_url || 
@@ -175,8 +176,33 @@ export default function Home() {
             {/* Fiyat Karşılaştırma Tablosu */}
             {product.has_price_tiers && priceTiers.length > 0 ? (
               <div className="mt-3">
-                <div className="text-sm font-medium text-gray-700 mb-3">💰 Fiyat Seçenekleri:</div>
+                <button
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    setShowPrices(!showPrices);
+                  }}
+                  className="w-full text-sm font-medium text-orange-600 hover:text-orange-700 mb-2 flex items-center justify-center gap-1 py-2 px-3 bg-orange-50 rounded-lg hover:bg-orange-100 transition-colors duration-200"
+                >
+                  {showPrices ? (
+                    <>
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
+                      </svg>
+                      Fiyatları Gizle
+                    </>
+                  ) : (
+                    <>
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                      </svg>
+                      Fiyatları Göster
+                    </>
+                  )}
+                </button>
+                {showPrices && (
                 <div className="bg-gray-50 rounded-lg p-3 space-y-2">
+                    <div className="text-sm font-medium text-gray-700 mb-2">💰 Fiyat Seçenekleri:</div>
                   {/* Toptan fiyat seviyeleri */}
                   {priceTiers.slice(0, 3).map((tier: any, index: number) => {
                     return (
@@ -193,6 +219,7 @@ export default function Home() {
                     </div>
                   )}
                 </div>
+                )}
               </div>
             ) : (
               <div className="mt-2 flex items-center">
