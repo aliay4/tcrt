@@ -99,12 +99,18 @@ export default function Navbar() {
     <header className="bg-white shadow-sm sticky top-0 z-50">
       {/* Main Navigation */}
       <div className="max-w-7xl mx-auto px-4">
-        <div className="flex items-center justify-between h-16">
+        <div className="flex items-center justify-between h-16 md:h-16">
           {/* Logo */}
-          <div className="flex items-center">
+          <div className="flex items-center min-w-0">
             <Link href="/" className="flex-shrink-0 flex items-center group">
-              <Image src="/ikon.svg" alt="TrendyShop Logo" width={75} height={75} className="mr-3 group-hover:scale-105 transition-transform duration-300" />
-              <span className="text-2xl font-bold bg-gradient-to-r from-orange-600 to-red-600 bg-clip-text text-transparent group-hover:from-red-600 group-hover:to-orange-600 transition-all duration-300">
+              <Image
+                src="/ikon.svg"
+                alt="TrendyShop Logo"
+                width={75}
+                height={75}
+                className="mr-2 md:mr-3 group-hover:scale-105 transition-transform duration-300 h-12 w-12 md:h-[75px] md:w-[75px]"
+              />
+              <span className="text-lg md:text-2xl font-bold bg-gradient-to-r from-orange-600 to-red-600 bg-clip-text text-transparent group-hover:from-red-600 group-hover:to-orange-600 transition-all duration-300 truncate">
                 Yüksel Ticaret
               </span>
             </Link>
@@ -253,10 +259,10 @@ export default function Navbar() {
               </div>
             ) : (
               <Link href="/auth/login" className="text-gray-700 hover:text-orange-600 flex items-center p-2 rounded-lg hover:bg-orange-50 transition-all duration-300 group">
-                <svg className="w-5 h-5 mr-2 group-hover:scale-110 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className="w-5 h-5 md:mr-2 group-hover:scale-110 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                 </svg>
-                <span className="font-medium">Giriş Yap</span>
+                <span className="font-medium hidden sm:inline">Giriş Yap</span>
               </Link>
             )}
             <Link href="/favorites" className="text-gray-700 hover:text-orange-600 flex items-center p-2 rounded-lg hover:bg-orange-50 transition-all duration-300 group">
@@ -277,14 +283,7 @@ export default function Navbar() {
           </div>
 
           {/* Mobile User Actions */}
-          <div className="md:hidden flex items-center space-x-4">
-            {/* Favoriler */}
-            <Link href="/favorites" className="text-gray-700 hover:text-orange-600 flex items-center p-2 rounded-lg hover:bg-orange-50 transition-all duration-300 group">
-              <svg className="w-6 h-6 group-hover:scale-110 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
-              </svg>
-            </Link>
-            
+          <div className="md:hidden flex items-center space-x-2">
             {/* Sepet */}
             <Link href="/cart" className="text-gray-700 hover:text-orange-600 flex items-center relative p-2 rounded-lg hover:bg-orange-50 transition-all duration-300 group">
               <svg className="w-6 h-6 group-hover:scale-110 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -295,6 +294,13 @@ export default function Navbar() {
                   {cartCount}
                 </span>
               )}
+            </Link>
+            
+            {/* Favoriler - Sepete yakın */}
+            <Link href="/favorites" className="text-gray-700 hover:text-orange-600 flex items-center p-2 rounded-lg hover:bg-orange-50 transition-all duration-300 group">
+              <svg className="w-5 h-5 group-hover:scale-110 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+              </svg>
             </Link>
             
             {/* Profil/Giriş */}
@@ -370,7 +376,7 @@ export default function Navbar() {
         </div>
 
         {/* Search Bar - Mobile */}
-        <div className="md:hidden mb-4">
+        <div className="md:hidden mb-3">
           <form onSubmit={handleSearch} className="flex relative">
             <div className="relative flex-1">
               <input
@@ -379,14 +385,14 @@ export default function Navbar() {
                 onChange={(e) => setSearchQuery(e.target.value)}
                 onFocus={handleInputFocus}
                 onBlur={handleInputBlur}
-                placeholder="Ürün, marka ve daha fazlasını arayın..."
-                className="w-full px-4 py-3 pl-12 pr-4 border-2 border-gray-300 rounded-l-xl focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-all duration-300 bg-gray-50 hover:bg-white text-gray-900 placeholder-gray-500"
+                placeholder="Ürün, marka arayın..."
+                className="w-full px-3 py-2.5 pl-10 pr-4 text-sm border-2 border-gray-300 rounded-l-xl focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-all duration-300 bg-gray-50 hover:bg-white text-gray-900 placeholder-gray-500"
               />
-              <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                 {searchLoading ? (
-                  <div className="animate-spin rounded-full h-5 w-5 border-2 border-orange-500 border-t-transparent"></div>
+                  <div className="animate-spin rounded-full h-4 w-4 border-2 border-orange-500 border-t-transparent"></div>
                 ) : (
-                  <svg className="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg className="h-4 w-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                   </svg>
                 )}
@@ -401,15 +407,15 @@ export default function Navbar() {
                       onClick={() => handleSuggestionClick(suggestion.id)}
                       className="flex items-center p-3 hover:bg-orange-50 cursor-pointer transition-colors duration-200 border-b border-gray-100 last:border-b-0"
                     >
-                      <div className="w-10 h-10 bg-gray-100 rounded-lg overflow-hidden flex-shrink-0 mr-3">
+                      <div className="w-8 h-8 bg-gray-100 rounded-lg overflow-hidden flex-shrink-0 mr-3">
                         {suggestion.image_url ? (
-                          <MediaDisplay 
+                          <MediaDisplay
                             mediaUrl={suggestion.image_url}
                             alt={suggestion.name}
                             className="w-full h-full object-cover"
                           />
                         ) : (
-                          <div className="w-full h-full flex items-center justify-center text-gray-400 text-sm">
+                          <div className="w-full h-full flex items-center justify-center text-gray-400 text-xs">
                             📦
                           </div>
                         )}
@@ -425,7 +431,7 @@ export default function Navbar() {
                           )}
                         </div>
                       </div>
-                      <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <svg className="w-3 h-3 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                       </svg>
                     </div>
@@ -435,9 +441,9 @@ export default function Navbar() {
             </div>
             <button
               type="submit"
-              className="bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700 text-white px-6 py-3 rounded-r-xl transition-all duration-300 font-semibold hover:scale-105 shadow-lg"
+              className="bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700 text-white px-4 py-2.5 rounded-r-xl transition-all duration-300 font-semibold hover:scale-105 shadow-lg"
             >
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
               </svg>
             </button>
@@ -446,12 +452,12 @@ export default function Navbar() {
 
         {/* Mobile Category Navigation - Admin panelinde gizle */}
         {!isAdminPanel && (
-          <div className="md:hidden mb-4">
-            <div className="flex space-x-2 overflow-x-auto pb-2 scrollbar-hide">
+          <div className="md:hidden mb-3">
+            <div className="flex space-x-1.5 overflow-x-auto pb-1 scrollbar-hide">
               {/* Ana Sayfa - Her zaman sabit */}
               <Link
                 href="/"
-                className={`flex-shrink-0 px-4 py-2 rounded-full text-sm font-medium transition-all duration-300 whitespace-nowrap ${
+                className={`flex-shrink-0 px-3 py-1.5 rounded-full text-xs font-medium transition-all duration-300 whitespace-nowrap ${
                   pathname === "/"
                     ? "bg-blue-600 text-white shadow-lg transform scale-105"
                     : "bg-gray-100 text-gray-700 hover:bg-blue-100 hover:text-blue-600 hover:shadow-md border border-gray-200"
@@ -463,7 +469,7 @@ export default function Navbar() {
               {/* Tüm Ürünler - Her zaman sabit */}
               <Link
                 href="/products"
-                className={`flex-shrink-0 px-4 py-2 rounded-full text-sm font-medium transition-all duration-300 whitespace-nowrap ${
+                className={`flex-shrink-0 px-3 py-1.5 rounded-full text-xs font-medium transition-all duration-300 whitespace-nowrap ${
                   pathname === "/products"
                     ? "bg-orange-600 text-white shadow-lg transform scale-105"
                     : "bg-gray-100 text-gray-700 hover:bg-orange-100 hover:text-orange-600 hover:shadow-md border border-gray-200"
@@ -474,9 +480,9 @@ export default function Navbar() {
 
               {categoriesLoading ? (
                 // Loading skeleton
-                Array.from({ length: 4 }).map((_, i) => (
+                Array.from({ length: 3 }).map((_, i) => (
                   <div key={i} className="flex-shrink-0">
-                    <div className="w-20 h-8 bg-gray-200 rounded-full animate-pulse"></div>
+                    <div className="w-16 h-6 bg-gray-200 rounded-full animate-pulse"></div>
                   </div>
                 ))
               ) : (
@@ -484,7 +490,7 @@ export default function Navbar() {
                   <Link
                     key={category.id}
                     href={`/categories/${category.id}`}
-                    className={`flex-shrink-0 px-4 py-2 rounded-full text-sm font-medium transition-all duration-300 whitespace-nowrap ${
+                    className={`flex-shrink-0 px-3 py-1.5 rounded-full text-xs font-medium transition-all duration-300 whitespace-nowrap ${
                       pathname === `/categories/${category.id}`
                         ? "bg-orange-600 text-white shadow-lg transform scale-105"
                         : "bg-gray-100 text-gray-700 hover:bg-orange-100 hover:text-orange-600 hover:shadow-md border border-gray-200"
