@@ -31,7 +31,7 @@ interface Product {
 export default function CategoryDetailsPage() {
   const params = useParams();
   const categoryId = Number(params.id);
-  
+
   const [category, setCategory] = useState<Category | null>(null);
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
@@ -46,17 +46,24 @@ export default function CategoryDetailsPage() {
     try {
       const [categoryRes, productsRes] = await Promise.all([
         categoryApi.getById(categoryId),
-        productApi.getAll({ category: categoryId.toString() }),
+        productApi.getAll({
+          category: categoryId.toString(),
+          status: "active",
+        }),
       ]);
 
       setCategory(categoryRes.data);
-      setProducts(productsRes.data);
-      
+      // Sadece aktif ürünleri filtrele
+      const activeProducts = productsRes.data.filter(
+        (product: any) => product.is_active,
+      );
+      setProducts(activeProducts);
+
       // Debug: Log product data to see what we're getting
-      console.log('Products loaded:', productsRes.data);
-      console.log('First product details:', productsRes.data[0]);
+      console.log("Products loaded:", productsRes.data);
+      console.log("Active products:", activeProducts);
     } catch (error) {
-      console.error('Error loading data:', error);
+      console.error("Error loading data:", error);
     } finally {
       setLoading(false);
     }
@@ -92,10 +99,14 @@ export default function CategoryDetailsPage() {
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
           <div className="text-6xl mb-4">❌</div>
-          <h1 className="text-3xl font-bold text-gray-900 mb-4">Kategori bulunamadı</h1>
-          <p className="text-gray-600 mb-6">Aradığınız kategori mevcut değil.</p>
-          <Link 
-            href="/categories" 
+          <h1 className="text-3xl font-bold text-gray-900 mb-4">
+            Kategori bulunamadı
+          </h1>
+          <p className="text-gray-600 mb-6">
+            Aradığınız kategori mevcut değil.
+          </p>
+          <Link
+            href="/categories"
             className="inline-block bg-orange-600 hover:bg-orange-700 text-white py-3 px-6 rounded-lg font-semibold transition-all duration-300 hover:scale-105"
           >
             Tüm kategorileri görüntüle
@@ -113,7 +124,7 @@ export default function CategoryDetailsPage() {
         <div className="absolute inset-0 bg-black/10"></div>
         <div className="absolute top-0 right-0 w-96 h-96 bg-white/5 rounded-full -translate-y-48 translate-x-48"></div>
         <div className="absolute bottom-0 left-0 w-64 h-64 bg-white/5 rounded-full translate-y-32 -translate-x-32"></div>
-        
+
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-center">
             {/* Category Info */}
@@ -122,13 +133,15 @@ export default function CategoryDetailsPage() {
               <div className="relative">
                 {category.image_url ? (
                   <div className="relative">
-                    <MediaDisplay 
+                    <MediaDisplay
                       mediaUrl={category.image_url}
                       alt={category.name}
                       className="w-24 h-24 rounded-2xl object-cover shadow-2xl ring-4 ring-white/30"
                     />
                     <div className="absolute -top-2 -right-2 w-8 h-8 bg-white rounded-full flex items-center justify-center shadow-lg">
-                      <span className="text-orange-600 text-sm font-bold">📦</span>
+                      <span className="text-orange-600 text-sm font-bold">
+                        📦
+                      </span>
                     </div>
                   </div>
                 ) : (
@@ -137,25 +150,32 @@ export default function CategoryDetailsPage() {
                   </div>
                 )}
               </div>
-              
+
               {/* Enhanced Category Info */}
               <div className="text-white">
-                <h1 className="text-4xl font-bold mb-2 drop-shadow-lg">{category.name}</h1>
+                <h1 className="text-4xl font-bold mb-2 drop-shadow-lg">
+                  {category.name}
+                </h1>
                 {category.description && (
-                  <p className="text-white/90 text-lg mb-3 drop-shadow-md">{category.description}</p>
+                  <p className="text-white/90 text-lg mb-3 drop-shadow-md">
+                    {category.description}
+                  </p>
                 )}
                 <div className="flex items-center space-x-4">
                   <div className="bg-white/20 backdrop-blur-sm rounded-full px-4 py-2">
-                    <span className="text-white font-bold text-lg">{sortedProducts.length}</span>
+                    <span className="text-white font-bold text-lg">
+                      {sortedProducts.length}
+                    </span>
                     <span className="text-white/90 ml-1">ürün</span>
                   </div>
                   <div className="bg-white/20 backdrop-blur-sm rounded-full px-4 py-2">
-                    <span className="text-white/90 text-sm">🎯 Popüler kategori</span>
+                    <span className="text-white/90 text-sm">
+                      🎯 Popüler kategori
+                    </span>
                   </div>
                 </div>
               </div>
             </div>
-            
           </div>
         </div>
       </div>
@@ -164,11 +184,16 @@ export default function CategoryDetailsPage() {
         {/* Filters and Sorting */}
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
           <div className="text-gray-700">
-            <span className="font-semibold text-gray-900">{sortedProducts.length}</span> ürün gösteriliyor
+            <span className="font-semibold text-gray-900">
+              {sortedProducts.length}
+            </span>{" "}
+            ürün gösteriliyor
           </div>
-          
+
           <div className="flex items-center">
-            <label htmlFor="sort" className="mr-3 text-gray-700 font-medium">Sırala:</label>
+            <label htmlFor="sort" className="mr-3 text-gray-700 font-medium">
+              Sırala:
+            </label>
             <select
               id="sort"
               value={sortBy}
@@ -182,13 +207,14 @@ export default function CategoryDetailsPage() {
           </div>
         </div>
 
-
         {/* Products Grid */}
         {sortedProducts.length === 0 ? (
           <div className="text-center py-16">
             <div className="bg-white rounded-xl shadow-lg p-12 max-w-md mx-auto">
               <div className="text-6xl mb-4">📦</div>
-              <h3 className="text-2xl font-bold text-gray-900 mb-4">Ürün Bulunamadı</h3>
+              <h3 className="text-2xl font-bold text-gray-900 mb-4">
+                Ürün Bulunamadı
+              </h3>
               <p className="text-gray-600 mb-6">
                 Bu kategoride henüz ürün yok. Daha sonra tekrar kontrol edin!
               </p>
@@ -203,13 +229,19 @@ export default function CategoryDetailsPage() {
         ) : (
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
             {sortedProducts.map((product) => {
-              const imageUrl = product.images && product.images.length > 0 ? product.images[0] : 
-                              product.image_url || 
-                              product.media_url || 
-                              product.product_image ||
-                              null;
-              const discount = product.compare_price 
-                ? Math.round(((product.compare_price - product.price) / product.compare_price) * 100) 
+              const imageUrl =
+                product.images && product.images.length > 0
+                  ? product.images[0]
+                  : product.image_url ||
+                    product.media_url ||
+                    product.product_image ||
+                    null;
+              const discount = product.compare_price
+                ? Math.round(
+                    ((product.compare_price - product.price) /
+                      product.compare_price) *
+                      100,
+                  )
                 : 0;
 
               return (
@@ -221,7 +253,7 @@ export default function CategoryDetailsPage() {
                   <div className="relative">
                     <div className="bg-gray-100 w-full h-48 overflow-hidden">
                       {imageUrl ? (
-                        <MediaDisplay 
+                        <MediaDisplay
                           mediaUrl={imageUrl}
                           alt={product.name}
                           className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
@@ -242,14 +274,27 @@ export default function CategoryDetailsPage() {
                         -{discount}%
                       </div>
                     )}
-                    {((product.stock_quantity || product.quantity || 0) === 0) && (
+                    {(product.stock_quantity || product.quantity || 0) ===
+                      0 && (
                       <div className="absolute inset-0 bg-black bg-opacity-60 flex items-center justify-center">
-                        <span className="text-white font-bold text-sm bg-red-600 px-3 py-1 rounded-full">Out of Stock</span>
+                        <span className="text-white font-bold text-sm bg-red-600 px-3 py-1 rounded-full">
+                          Out of Stock
+                        </span>
                       </div>
                     )}
                     <div className="absolute top-3 left-3 bg-white/90 backdrop-blur-sm rounded-full p-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                      <svg className="w-4 h-4 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+                      <svg
+                        className="w-4 h-4 text-gray-600"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"
+                        />
                       </svg>
                     </div>
                   </div>
@@ -261,7 +306,14 @@ export default function CategoryDetailsPage() {
                       {product.has_price_tiers && priceTiersMap[product.id] ? (
                         <>
                           <span className="text-xl font-bold text-orange-600">
-                            ₺{Math.round(getLowestPrice(priceTiersMap[product.id], product.price))}'den başlayan
+                            ₺
+                            {Math.round(
+                              getLowestPrice(
+                                priceTiersMap[product.id],
+                                product.price,
+                              ),
+                            )}
+                            'den başlayan
                           </span>
                           <span className="ml-2 text-sm text-gray-500 line-through">
                             ₺{Math.round(product.price)}
@@ -269,17 +321,31 @@ export default function CategoryDetailsPage() {
                         </>
                       ) : (
                         <>
-                          <span className="text-xl font-bold text-orange-600">₺{Math.round(product.price)}</span>
+                          <span className="text-xl font-bold text-orange-600">
+                            ₺{Math.round(product.price)}
+                          </span>
                           {product.compare_price && (
-                            <span className="ml-2 text-sm text-gray-500 line-through">₺{Math.round(product.compare_price)}</span>
+                            <span className="ml-2 text-sm text-gray-500 line-through">
+                              ₺{Math.round(product.compare_price)}
+                            </span>
                           )}
                         </>
                       )}
                     </div>
                     <div className="mt-3 flex items-center text-orange-600 text-sm font-medium">
                       <span>View Details</span>
-                      <svg className="w-4 h-4 ml-1 group-hover:translate-x-1 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                      <svg
+                        className="w-4 h-4 ml-1 group-hover:translate-x-1 transition-transform duration-300"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M9 5l7 7-7 7"
+                        />
                       </svg>
                     </div>
                   </div>

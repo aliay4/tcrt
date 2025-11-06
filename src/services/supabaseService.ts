@@ -1,4 +1,4 @@
-import { supabase } from '@/lib/supabaseClient';
+import { supabase } from "@/lib/supabaseClient";
 
 // Product service
 export const productService = {
@@ -7,18 +7,18 @@ export const productService = {
     try {
       // First get all products
       const { data: products, error: productsError } = await supabase
-        .from('products')
-        .select('*');
-      
+        .from("products")
+        .select("*");
+
       if (productsError) {
-        console.error('Supabase products error:', productsError);
+        console.error("Supabase products error:", productsError);
         throw new Error(`Failed to fetch products: ${productsError.message}`);
       }
-      
+
       // Then get all product-category relationships
-      const { data: productCategories, error: pcError } = await supabase
-        .from('product_categories')
-        .select(`
+      const { data: productCategories, error: pcError } = await supabase.from(
+        "product_categories",
+      ).select(`
           product_id,
           category_id,
           categories(
@@ -28,43 +28,47 @@ export const productService = {
             is_active
           )
         `);
-      
+
       if (pcError) {
-        console.error('Supabase product_categories error:', pcError);
-        throw new Error(`Failed to fetch product categories: ${pcError.message}`);
+        console.error("Supabase product_categories error:", pcError);
+        throw new Error(
+          `Failed to fetch product categories: ${pcError.message}`,
+        );
       }
-      
+
       // Transform data to include categories array
-      const transformedData = (products || []).map(product => {
-        const productCats = productCategories?.filter(pc => pc.product_id === product.id) || [];
+      const transformedData = (products || []).map((product) => {
+        const productCats =
+          productCategories?.filter((pc) => pc.product_id === product.id) || [];
         return {
           ...product,
-          categories: productCats.map(pc => pc.categories).filter(Boolean)
+          categories: productCats.map((pc) => pc.categories).filter(Boolean),
         };
       });
-      
+
       return transformedData;
     } catch (error) {
-      console.error('ProductService getAll error:', error);
+      console.error("ProductService getAll error:", error);
       throw error;
     }
   },
-  
+
   // Get product by ID with categories
   getById: async (id: number) => {
     // First get the product
     const { data: product, error: productError } = await supabase
-      .from('products')
-      .select('*')
-      .eq('id', id)
+      .from("products")
+      .select("*")
+      .eq("id", id)
       .single();
-    
+
     if (productError) throw productError;
-    
+
     // Then get product categories
     const { data: productCategories, error: pcError } = await supabase
-      .from('product_categories')
-      .select(`
+      .from("product_categories")
+      .select(
+        `
         category_id,
         categories(
           id,
@@ -72,97 +76,102 @@ export const productService = {
           description,
           is_active
         )
-      `)
-      .eq('product_id', id);
-    
+      `,
+      )
+      .eq("product_id", id);
+
     if (pcError) throw pcError;
-    
+
     // Transform data to include categories array
     return {
       ...product,
-      categories: productCategories?.map(pc => pc.categories).filter(Boolean) || []
+      categories:
+        productCategories?.map((pc) => pc.categories).filter(Boolean) || [],
     };
   },
-  
+
   // Create a new product with categories
   create: async (productData: any) => {
     const { categories, ...productInfo } = productData;
-    
-    // Create the product first
+
+    // Create the product first - set category_id to null since we use product_categories table
     const { data: product, error: productError } = await supabase
-      .from('products')
-      .insert([productInfo])
+      .from("products")
+      .insert([{ ...productInfo, category_id: null }])
       .select()
       .single();
-    
+
     if (productError) throw productError;
-    
+
     // Add categories if provided
     if (categories && categories.length > 0) {
       const categoryInserts = categories.map((categoryId: number) => ({
         product_id: product.id,
-        category_id: categoryId
+        category_id: categoryId,
       }));
-      
+
       const { error: categoryError } = await supabase
-        .from('product_categories')
+        .from("product_categories")
         .insert(categoryInserts);
-      
+
       if (categoryError) throw categoryError;
     }
-    
+
     return product;
   },
-  
+
   // Update a product with categories
   update: async (id: number, productData: any) => {
     const { categories, ...productInfo } = productData;
-    
+
     // Update the product
     const { data, error } = await supabase
-      .from('products')
+      .from("products")
       .update(productInfo)
-      .eq('id', id)
+      .eq("id", id)
       .select()
       .single();
-    
+
     if (error) throw error;
-    
-    // Update categories if provided
-    if (categories !== undefined) {
+
+    // Update categories ONLY if explicitly provided (not undefined)
+    // categories === undefined means "don't touch categories"
+    // categories === [] means "remove all categories"
+    // categories === [1,2,3] means "set these categories"
+    if (categories !== undefined && Array.isArray(categories)) {
       // Delete existing categories
       const { error: deleteError } = await supabase
-        .from('product_categories')
+        .from("product_categories")
         .delete()
-        .eq('product_id', id);
-      
+        .eq("product_id", id);
+
       if (deleteError) throw deleteError;
-      
-      // Add new categories
-      if (categories && categories.length > 0) {
+
+      // Add new categories (only if array is not empty)
+      if (categories.length > 0) {
         const categoryInserts = categories.map((categoryId: number) => ({
           product_id: id,
-          category_id: categoryId
+          category_id: categoryId,
         }));
-        
+
         const { error: categoryError } = await supabase
-          .from('product_categories')
+          .from("product_categories")
           .insert(categoryInserts);
-        
+
         if (categoryError) throw categoryError;
       }
     }
-    
+
     return data;
   },
-  
+
   // Delete a product
   delete: async (id: number) => {
     const { data, error } = await supabase
-      .from('products')
+      .from("products")
       .delete()
-      .eq('id', id);
-    
+      .eq("id", id);
+
     if (error) throw error;
     return data;
   },
@@ -173,66 +182,64 @@ export const categoryService = {
   // Get all categories
   getAll: async () => {
     try {
-      const { data, error } = await supabase
-        .from('categories')
-        .select('*');
-      
+      const { data, error } = await supabase.from("categories").select("*");
+
       if (error) {
-        console.error('Supabase categories error:', error);
+        console.error("Supabase categories error:", error);
         throw new Error(`Failed to fetch categories: ${error.message}`);
       }
-      
+
       return data || [];
     } catch (error) {
-      console.error('CategoryService getAll error:', error);
+      console.error("CategoryService getAll error:", error);
       throw error;
     }
   },
-  
+
   // Get category by ID
   getById: async (id: number) => {
     const { data, error } = await supabase
-      .from('categories')
-      .select('*')
-      .eq('id', id)
+      .from("categories")
+      .select("*")
+      .eq("id", id)
       .single();
-    
+
     if (error) throw error;
     return data;
   },
-  
+
   // Create a new category
   create: async (categoryData: any) => {
     const { data, error } = await supabase
-      .from('categories')
+      .from("categories")
       .insert([categoryData])
       .select()
       .single();
-    
+
     if (error) throw error;
     return data;
   },
-  
+
   // Update a category
   update: async (id: number, categoryData: any) => {
     const { data, error } = await supabase
-      .from('categories')
+      .from("categories")
       .update(categoryData)
-      .eq('id', id)
+      .eq("id", id)
       .select()
       .single();
-    
+
     if (error) throw error;
     return data;
   },
-  
+
   // Delete a category
   delete: async (id: number) => {
     const { data, error } = await supabase
-      .from('categories')
+      .from("categories")
       .delete()
-      .eq('id', id);
-    
+      .eq("id", id);
+
     if (error) throw error;
     return data;
   },
@@ -242,58 +249,53 @@ export const categoryService = {
 export const orderService = {
   // Get all orders
   getAll: async () => {
-    const { data, error } = await supabase
-      .from('orders')
-      .select('*');
-    
+    const { data, error } = await supabase.from("orders").select("*");
+
     if (error) throw error;
     return data;
   },
-  
+
   // Get order by ID
   getById: async (id: string) => {
     const { data, error } = await supabase
-      .from('orders')
-      .select('*')
-      .eq('id', id)
+      .from("orders")
+      .select("*")
+      .eq("id", id)
       .single();
-    
+
     if (error) throw error;
     return data;
   },
-  
+
   // Create a new order
   create: async (orderData: any) => {
     const { data, error } = await supabase
-      .from('orders')
+      .from("orders")
       .insert([orderData])
       .select()
       .single();
-    
+
     if (error) throw error;
     return data;
   },
-  
+
   // Update an order
   update: async (id: string, orderData: any) => {
     const { data, error } = await supabase
-      .from('orders')
+      .from("orders")
       .update(orderData)
-      .eq('id', id)
+      .eq("id", id)
       .select()
       .single();
-    
+
     if (error) throw error;
     return data;
   },
-  
+
   // Delete an order
   delete: async (id: string) => {
-    const { data, error } = await supabase
-      .from('orders')
-      .delete()
-      .eq('id', id);
-    
+    const { data, error } = await supabase.from("orders").delete().eq("id", id);
+
     if (error) throw error;
     return data;
   },
@@ -303,58 +305,56 @@ export const orderService = {
 export const customerService = {
   // Get all customers
   getAll: async () => {
-    const { data, error } = await supabase
-      .from('customers')
-      .select('*');
-    
+    const { data, error } = await supabase.from("customers").select("*");
+
     if (error) throw error;
     return data;
   },
-  
+
   // Get customer by ID
   getById: async (id: number) => {
     const { data, error } = await supabase
-      .from('customers')
-      .select('*')
-      .eq('id', id)
+      .from("customers")
+      .select("*")
+      .eq("id", id)
       .single();
-    
+
     if (error) throw error;
     return data;
   },
-  
+
   // Create a new customer
   create: async (customerData: any) => {
     const { data, error } = await supabase
-      .from('customers')
+      .from("customers")
       .insert([customerData])
       .select()
       .single();
-    
+
     if (error) throw error;
     return data;
   },
-  
+
   // Update a customer
   update: async (id: number, customerData: any) => {
     const { data, error } = await supabase
-      .from('customers')
+      .from("customers")
       .update(customerData)
-      .eq('id', id)
+      .eq("id", id)
       .select()
       .single();
-    
+
     if (error) throw error;
     return data;
   },
-  
+
   // Delete a customer
   delete: async (id: number) => {
     const { data, error } = await supabase
-      .from('customers')
+      .from("customers")
       .delete()
-      .eq('id', id);
-    
+      .eq("id", id);
+
     if (error) throw error;
     return data;
   },
